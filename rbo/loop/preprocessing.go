@@ -105,7 +105,7 @@ func TransformIntoWristFrame(data Data) Data {
 func ConvertSofaStates(filename string, pattern *regexp.Regexp, directory *string, convertToWritsFrame bool) {
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)
 	rbohand2Files := Select(files, *pattern)
-	for _, s := range rbohand2Files[0:3] {
+	for _, s := range rbohand2Files {
 		data := ReadSofaSates(*directory, s) // returns 2d-array of pose
 		data = ConvertAngles(data)
 		if convertToWritsFrame {

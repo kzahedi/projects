@@ -42,6 +42,7 @@ func ReadSofaSates(parent, input string) Data {
 	fmt.Println("Reading:", input)
 
 	file, _ := os.Open(input)
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -82,7 +83,7 @@ func framesToStringSlice(trajectories []Trajectory) [][]string {
 
 func WritePositions(filename string, data Data) {
 	stringData := framesToStringSlice(data.Trajectories)
-	fmt.Println(fmt.Sprintf("Writing positions to %s", filename))
+	fmt.Println(fmt.Sprintf("Writing: %s", filename))
 	file, err := os.Create(filename)
 	if err != nil {
 		panic(err)
@@ -100,6 +101,7 @@ func ReadCSVToData(parent, input string) Data {
 	fmt.Println("Reading:", input)
 
 	file, _ := os.Open(input)
+	defer file.Close()
 
 	r := csv.NewReader(file)
 	records, err := r.ReadAll()
@@ -126,4 +128,15 @@ func ReadCSVToData(parent, input string) Data {
 		}
 	}
 	return data
+}
+
+func WriteCSV(filename string, data [][]string) {
+	fmt.Println("Writing:", filename)
+	file, err := os.Create(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	w := csv.NewWriter(file)
+	w.WriteAll(data)
 }

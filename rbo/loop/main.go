@@ -32,7 +32,7 @@ func main() {
 	////////////////////////////////////////////////////////////
 
 	ConvertSofaStates("hand.sofastates.txt", rbohand2, directory, true)
-	// ConvertSofaStates("obstacle.sofastates.txt", rbohand2, directory, false)
+	ConvertSofaStates("obstacle.sofastates.txt", rbohand2, directory, false)
 
 	ConvertSofaStates("hand.sofastates.txt", rbohand2p, directory, true)
 	ConvertSofaStates("obstacle.sofastates.txt", rbohand2p, directory, false)

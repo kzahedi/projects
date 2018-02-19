@@ -37,7 +37,7 @@ func convert(data []string) []Pose {
 	return r
 }
 
-func ReadSofaSates(parent, input string) Data {
+func ReadSofaSates(input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
 	fmt.Println("Reading:", input)
 
@@ -96,7 +96,7 @@ func WritePositions(filename string, data Data) {
 	writer.WriteAll(stringData)
 }
 
-func ReadCSVToData(parent, input string) Data {
+func ReadCSVToData(input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
 	fmt.Println("Reading:", input)
 
@@ -128,6 +128,41 @@ func ReadCSVToData(parent, input string) Data {
 		}
 	}
 	return data
+}
+
+func ReadCSVToArray(input string) []float64 {
+	fmt.Println("Reading:", input)
+
+	file, _ := os.Open(input)
+	defer file.Close()
+
+	r := csv.NewReader(file)
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := make([]float64, 93*93, 93*93)
+
+	index := 0
+	for i := 0; i < 93; i++ {
+		for j := 0; j < 93; j++ {
+			data[index], _ = strconv.ParseFloat(records[i][j], 64)
+			index++
+		}
+	}
+	return data
+}
+
+func WriteCSVFloat(filename string, data [][]float64) {
+	d := make([][]string, len(data), len(data))
+	for i := 0; i < len(data); i++ {
+		d[i] = make([]string, len(data[i]), len(data[i]))
+		for j := 0; j < len(data[i]); j++ {
+			d[i][j] = fmt.Sprintf("%f", data[i][j])
+		}
+	}
+	WriteCSV(filename, d)
 }
 
 func WriteCSV(filename string, data [][]string) {

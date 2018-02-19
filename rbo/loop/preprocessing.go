@@ -102,11 +102,13 @@ func TransformIntoWristFrame(data Data) Data {
 	return r
 }
 
-func ConvertSofaStates(filename string, pattern *regexp.Regexp, directory *string, convertToWritsFrame bool) {
+func ConvertSofaStates(filename string, hand, controller *regexp.Regexp, directory *string, convertToWritsFrame bool) {
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)
-	rbohand2Files := Select(files, *pattern)
+	rbohand2Files := Select(files, *hand)
+	rbohand2Files = Select(rbohand2Files, *controller)
+
 	for _, s := range rbohand2Files {
-		data := ReadSofaSates(*directory, s) // returns 2d-array of pose
+		data := ReadSofaSates(s) // returns 2d-array of pose
 		data = ConvertAngles(data)
 		if convertToWritsFrame {
 			data = TransformIntoWristFrame(data)
@@ -134,18 +136,20 @@ func calculateDifferencePositionOnly(grasp, prescriptive Data) Data {
 	return r
 }
 
-func CalculateDifferenceBehaviour(grasp, prescriptive *regexp.Regexp, directory *string) {
+func CalculateDifferenceBehaviour(grasp, prescriptive, controller *regexp.Regexp, directory *string) {
 	filename := "hand.sofastates.csv"
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)
 
-	rbohand2Prescriptives := Select(files, *prescriptive)
 	rbohand2Grasps := Select(files, *grasp)
+	rbohand2Grasps = Select(rbohand2Grasps, *controller)
 
 	// we only take the first prescriptive, because they are all identical (should be)
-	prescritiveData := ReadCSVToData(*directory, rbohand2Prescriptives[0])
+	rbohand2Prescriptives := Select(files, *prescriptive)
+	rbohand2Prescriptives = Select(rbohand2Prescriptives, *controller)
+	prescritiveData := ReadCSVToData(rbohand2Prescriptives[0])
 
 	for _, s := range rbohand2Grasps {
-		data := ReadCSVToData(*directory, s) // returns 2d-array of pose
+		data := ReadCSVToData(s) // returns 2d-array of pose
 		diff := calculateDifferencePositionOnly(data, prescritiveData)
 		output := strings.Replace(s, filename, fmt.Sprintf("difference.%s", filename), 1)
 		WritePositions(output, diff)

@@ -16,28 +16,36 @@ func main() {
 		fmt.Println("Please provide a directory to analyse.")
 		os.Exit(0)
 	}
-
-	hss := "hand.sofastates.txt"     //
-	oss := "obstacle.sofastates.txt" //
+	////////////////////////////////////////////////////////////
+	// define regexp patterns
+	////////////////////////////////////////////////////////////
 	rbohand2 := regexp.MustCompile(".*/rbohand2/.*")
+	rbohand2p := regexp.MustCompile(".*/rbohand2-prescriptive/.*")
+	// rbohandkz1 := regexp.MustCompile(".*/rbohandkz1/.*")
+	// rbohandkz1p := regexp.MustCompile(".*/rbohandkz1-prescriptive/.*")
+	// rbohandkz2 := regexp.MustCompile(".*/rbohandkz2/.*")
+	// rbohandkz2p := regexp.MustCompile(".*/rbohandkz2-prescriptive/.*")
 
-	hssFiles := ListAllFilesRecursivelyByFilename(*directory, hss)
-	rbohand2HssFiles := Select(hssFiles, *rbohand2)
-	for _, s := range rbohand2HssFiles[1:2] {
-		data := ReadSofaSates(*directory, s) // returns 2d-array of pose
-		data = CalculateGlobalVelocities(data)
-		// for _, t := range data.Trajectories {
-		// for i, p := range t.Frame {
-		// fmt.Println("Frame", i, p)
-		// }
-		// fmt.Println("*******************")
-		// }
-	}
+	////////////////////////////////////////////////////////////
+	// convert SOFA files to CSV
+	// including preprocessing (conversation to wrist frame)
+	////////////////////////////////////////////////////////////
 
-	ossFiles := ListAllFilesRecursivelyByFilename(*directory, oss)
-	rbohand2OssFiles := Select(ossFiles, *rbohand2)
-	for _, s := range rbohand2OssFiles[1:2] {
-		ReadSofaSates(*directory, s)
-	}
+	ConvertSofaStates("hand.sofastates.txt", rbohand2, directory, true)
+	// ConvertSofaStates("obstacle.sofastates.txt", rbohand2, directory, false)
+
+	ConvertSofaStates("hand.sofastates.txt", rbohand2p, directory, true)
+	ConvertSofaStates("obstacle.sofastates.txt", rbohand2p, directory, false)
+
+	////////////////////////////////////////////////////////////
+	// calculate difference behaviour (grasp - prescriptive)
+	////////////////////////////////////////////////////////////
+	CalculateDifferenceBehaviour(rbohand2, rbohand2p, directory)
+
+	////////////////////////////////////////////////////////////
+	// calculate co-variance matrices
+	////////////////////////////////////////////////////////////
+
+	CalculateCovarianceMatrices(rbohand2, directory)
 
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -45,14 +47,12 @@ func ListAllFilesRecursivelyByExtension(parent, extension string) []string {
 	files := ListAllFiles(parent)
 
 	for _, file := range files {
-		// fmt.Println(fmt.Sprintf("%s/%s -- %s", parent, file, filepath.Ext(file)))
 		if filepath.Ext(file) == extension {
 			r = append(r, fmt.Sprintf("%s/%s", parent, file))
 		}
 	}
 
 	for _, dir := range subdirs {
-		// fmt.Println("checking ", dir)
 		s := ListAllFilesRecursivelyByExtension(fmt.Sprintf("%s/%s", parent, dir), extension)
 		r = append(r, s...)
 	}
@@ -66,16 +66,18 @@ func ListAllFilesRecursivelyByFilename(parent, filename string) []string {
 	files := ListAllFiles(parent)
 
 	for _, file := range files {
-		// fmt.Println(fmt.Sprintf("%s/%s -- %s", parent, file, filepath.Ext(file)))
 		if file == filename {
 			r = append(r, fmt.Sprintf("%s/%s", parent, file))
 		}
 	}
 
 	for _, dir := range subdirs {
-		// fmt.Println("checking ", dir)
 		s := ListAllFilesRecursivelyByFilename(fmt.Sprintf("%s/%s", parent, dir), filename)
 		r = append(r, s...)
 	}
 	return r
+}
+
+func CreateDir(dir string) {
+	os.MkdirAll(path.Dir(dir), os.ModePerm)
 }

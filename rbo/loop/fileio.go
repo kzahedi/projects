@@ -2,53 +2,15 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
-	"math"
+	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/westphae/quaternion"
 )
-
-// data.Trajectories[trajectoryIndex].Frame[frameIndex].X = convertX(data, trajectoryIndex, frameIndex)
-
-func convertX(data Data, trajectoryIndex, frameIndex int) float64 {
-	previous := data.Trajectories[trajectoryIndex].Frame[frameIndex-1].Orientation.X
-	current := data.Trajectories[trajectoryIndex].Frame[frameIndex].Orientation.X
-	if previous < 0.0 && current > 0.0 && math.Abs(previous) > 0.1 && math.Abs(current) > 0.1 {
-		current = previous + current - math.Pi
-	}
-	if previous > 0.0 && current < 0.0 && math.Abs(previous) > 0.1 && math.Abs(current) > 0.1 {
-		current = previous + math.Pi + current
-	}
-	return current
-}
-
-func convertY(data Data, trajectoryIndex, frameIndex int) float64 {
-	previous := data.Trajectories[trajectoryIndex].Frame[frameIndex-1].Orientation.Y
-	current := data.Trajectories[trajectoryIndex].Frame[frameIndex].Orientation.Y
-	if previous < 0.0 && current > 0.0 && math.Abs(previous) > 0.1 && math.Abs(current) > 0.1 {
-		current = previous + current - math.Pi
-	}
-	if previous > 0.0 && current < 0.0 && math.Abs(previous) > 0.1 && math.Abs(current) > 0.1 {
-		current = previous + math.Pi + current
-	}
-	return current
-}
-
-func convertZ(data Data, trajectoryIndex, frameIndex int) float64 {
-	previous := data.Trajectories[trajectoryIndex].Frame[frameIndex-1].Orientation.Z
-	current := data.Trajectories[trajectoryIndex].Frame[frameIndex].Orientation.Z
-	if previous < 0.0 && current > 0.0 && math.Abs(previous) > 0.1 && math.Abs(current) > 0.1 {
-		current = previous + current - math.Pi
-	}
-	if previous > 0.0 && current < 0.0 && math.Abs(previous) > 0.1 && math.Abs(current) > 0.1 {
-		current = previous + math.Pi + current
-	}
-	return current
-}
 
 func convert(data []string) []Pose {
 	var r []Pose
@@ -69,10 +31,7 @@ func convert(data []string) []Pose {
 		q := quaternion.Quaternion{qw, qx, qy, qz}
 		phi, theta, psi := quaternion.Euler(q)
 
-		pos := P3D{x, y, z}
-		orientation := P3D{phi, theta, psi}
-
-		p := Pose{Position: pos, Orientation: orientation}
+		p := CreatePose(x, y, z, phi, theta, psi)
 		r = append(r, p)
 	}
 	return r
@@ -80,12 +39,7 @@ func convert(data []string) []Pose {
 
 func ReadSofaSates(parent, input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
-	fmt.Println(input)
-	dir := input
-	dir = strings.Replace(dir, "/raw/", "/", -1)
-	dir = strings.Replace(dir, parent, fmt.Sprintf("%s/%s", parent, "results"), -1)
-	dir = filepath.Dir(dir)
-	os.MkdirAll(dir, 0755)
+	fmt.Println("Reading:", input)
 
 	file, _ := os.Open(input)
 
@@ -107,14 +61,69 @@ func ReadSofaSates(parent, input string) Data {
 	data.NrOfDataPoints = len(data.Trajectories[0].Frame)
 	data.NrOfTrajectories = len(data.Trajectories)
 
-	// make angles continuous without jump from +pi to -pi and vice versa
-	for trajectoryIndex := 0; trajectoryIndex < data.NrOfTrajectories; trajectoryIndex++ {
-		for frameIndex := 1; frameIndex < data.NrOfDataPoints; frameIndex++ {
-			data.Trajectories[trajectoryIndex].Frame[frameIndex].Orientation.X = convertX(data, trajectoryIndex, frameIndex)
-			data.Trajectories[trajectoryIndex].Frame[frameIndex].Orientation.Y = convertY(data, trajectoryIndex, frameIndex)
-			data.Trajectories[trajectoryIndex].Frame[frameIndex].Orientation.Z = convertZ(data, trajectoryIndex, frameIndex)
+	return data
+}
+
+func framesToStringSlice(trajectories []Trajectory) [][]string {
+	nrOfFrames := len(trajectories[0].Frame)
+	r := make([][]string, nrOfFrames, nrOfFrames)
+	n := len(trajectories) * 3
+	for rowIndex := 0; rowIndex < nrOfFrames; rowIndex++ {
+		r[rowIndex] = make([]string, n, n)
+		for trajectoryIndex := 0; trajectoryIndex < len(trajectories); trajectoryIndex++ {
+			p := trajectories[trajectoryIndex].Frame[rowIndex].Position
+			r[rowIndex][trajectoryIndex*3] = fmt.Sprintf("%.3f", p.X)
+			r[rowIndex][trajectoryIndex*3+1] = fmt.Sprintf("%.3f", p.Y)
+			r[rowIndex][trajectoryIndex*3+2] = fmt.Sprintf("%.3f", p.Z)
 		}
 	}
+	return r
+}
 
+func WritePositions(filename string, data Data) {
+	stringData := framesToStringSlice(data.Trajectories)
+	fmt.Println(fmt.Sprintf("Writing positions to %s", filename))
+	file, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	writer.WriteAll(stringData)
+}
+
+func ReadCSVToData(parent, input string) Data {
+	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
+	fmt.Println("Reading:", input)
+
+	file, _ := os.Open(input)
+
+	r := csv.NewReader(file)
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data.NrOfDataPoints = len(records)
+	data.NrOfTrajectories = len(records[0]) / 3
+
+	data.Trajectories = make([]Trajectory, data.NrOfTrajectories, data.NrOfTrajectories)
+
+	for trajectoryIndex := 0; trajectoryIndex < data.NrOfTrajectories; trajectoryIndex++ {
+		data.Trajectories[trajectoryIndex].Frame = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
+		for frameIndex := 0; frameIndex < data.NrOfDataPoints; frameIndex++ {
+			xs := records[frameIndex][trajectoryIndex*3+0]
+			ys := records[frameIndex][trajectoryIndex*3+1]
+			zs := records[frameIndex][trajectoryIndex*3+2]
+			x, _ := strconv.ParseFloat(xs, 64)
+			y, _ := strconv.ParseFloat(ys, 64)
+			z, _ := strconv.ParseFloat(zs, 64)
+			pose := CreatePose(x, y, z, 0.0, 0.0, 0.0)
+			data.Trajectories[trajectoryIndex].Frame[frameIndex] = pose
+		}
+	}
 	return data
 }

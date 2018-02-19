@@ -21,41 +21,48 @@ func main() {
 	// define regexp patterns
 	////////////////////////////////////////////////////////////
 	rbohand2 := regexp.MustCompile(".*/rbohand2/.*")
-	// rbohand2p := regexp.MustCompile(".*/rbohand2-prescriptive/.*")
+	rbohand2p := regexp.MustCompile(".*/rbohand2-prescriptive/.*")
+	rbohandkz1 := regexp.MustCompile(".*/rbohandkz1/.*")
+	rbohandkz1p := regexp.MustCompile(".*/rbohandkz1-prescriptive/.*")
+	rbohandkz2 := regexp.MustCompile(".*/rbohandkz2/.*")
+	rbohandkz2p := regexp.MustCompile(".*/rbohandkz2-prescriptive/.*")
 
 	controller0 := regexp.MustCompile(".*-controller0-.*")
+	controller1 := regexp.MustCompile(".*-controller1-.*")
+	controller2 := regexp.MustCompile(".*-controller2-.*")
 
-	// rbohandkz1 := regexp.MustCompile(".*/rbohandkz1/.*")
-	// rbohandkz1p := regexp.MustCompile(".*/rbohandkz1-prescriptive/.*")
-	// rbohandkz2 := regexp.MustCompile(".*/rbohandkz2/.*")
-	// rbohandkz2p := regexp.MustCompile(".*/rbohandkz2-prescriptive/.*")
+	hands := []*regexp.Regexp{rbohand2, rbohand2p, rbohandkz1, rbohandkz1p, rbohandkz2, rbohandkz2p}
+	ctrls := []*regexp.Regexp{controller0, controller1, controller2}
 
 	////////////////////////////////////////////////////////////
 	// convert SOFA files to CSV
 	// including preprocessing (conversation to wrist frame)
 	////////////////////////////////////////////////////////////
 
-	// ConvertSofaStates("hand.sofastates.txt", rbohand2, controller0, directory, true)
-	// ConvertSofaStates("obstacle.sofastates.txt", rbohand2, controller0, directory, false)
-
-	// ConvertSofaStates("hand.sofastates.txt", rbohand2p, controller0, directory, true)
-	// ConvertSofaStates("obstacle.sofastates.txt", rbohand2p, controller0, directory, false)
+	// ConvertSofaStates("hand.sofastates.txt", hands, ctrls, directory, true)
+	// ConvertSofaStates("obstacle.sofastates.txt", hands, ctrls, directory, false)
 
 	////////////////////////////////////////////////////////////
 	// calculate difference behaviour (grasp - prescriptive)
 	////////////////////////////////////////////////////////////
 
-	// CalculateDifferenceBehaviour(rbohand2, rbohand2p, controller0, directory)
+	// CalculateDifferenceBehaviour(hands, ctrls, rbohand2p, directory)
 
 	////////////////////////////////////////////////////////////
 	// calculate co-variance matrices
 	////////////////////////////////////////////////////////////
 
-	// CalculateCovarianceMatrices(rbohand2, controller0, directory, 75)
+	// CalculateCovarianceMatrices(hands, ctrls, directory, 75)
+
+	////////////////////////////////////////////////////////////
+	// Calculating MC_W
+	////////////////////////////////////////////////////////////
+
+	CalculateMCW(hands, ctrls, directory, 100, 30)
 
 	////////////////////////////////////////////////////////////
 	// t-SNE
 	////////////////////////////////////////////////////////////
 
-	CalculateTSNE(rbohand2, controller0, directory)
+	// AnalyseData(rbohand2, controller0, directory)
 }

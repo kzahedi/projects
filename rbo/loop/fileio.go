@@ -39,7 +39,7 @@ func convert(data []string) []Pose {
 
 func ReadSofaSates(input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
-	fmt.Println("Reading:", input)
+	// fmt.Println("Reading:", input)
 
 	file, _ := os.Open(input)
 	defer file.Close()
@@ -83,7 +83,7 @@ func framesToStringSlice(trajectories []Trajectory) [][]string {
 
 func WritePositions(filename string, data Data) {
 	stringData := framesToStringSlice(data.Trajectories)
-	fmt.Println(fmt.Sprintf("Writing: %s", filename))
+	// fmt.Println(fmt.Sprintf("Writing: %s", filename))
 	file, err := os.Create(filename)
 	if err != nil {
 		panic(err)
@@ -98,7 +98,7 @@ func WritePositions(filename string, data Data) {
 
 func ReadCSVToData(input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
-	fmt.Println("Reading:", input)
+	// fmt.Println("Reading:", input)
 
 	file, _ := os.Open(input)
 	defer file.Close()
@@ -131,7 +131,7 @@ func ReadCSVToData(input string) Data {
 }
 
 func ReadCSVToArray(input string) []float64 {
-	fmt.Println("Reading:", input)
+	// fmt.Println("Reading:", input)
 
 	file, _ := os.Open(input)
 	defer file.Close()
@@ -154,6 +154,52 @@ func ReadCSVToArray(input string) []float64 {
 	return data
 }
 
+func ReadControlFile(input string) [][]float64 {
+	// fmt.Println("Reading:", input)
+
+	file, _ := os.Open(input)
+	defer file.Close()
+
+	r := csv.NewReader(file)
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := make([][]float64, len(records)-1, len(records)-1)
+
+	for i := 1; i < len(records); i++ {
+		data[i] = make([]float64, len(records[i]), len(records[i]))
+		for j := 0; j < len(records[i]); j++ {
+			data[i][j], _ = strconv.ParseFloat(records[i][j], 64)
+		}
+	}
+	return data
+}
+
+func ReadCSVToFloat(input string) [][]float64 {
+	// fmt.Println("Reading:", input)
+
+	file, _ := os.Open(input)
+	defer file.Close()
+
+	r := csv.NewReader(file)
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := make([][]float64, len(records), len(records))
+
+	for i := 0; i < len(records); i++ {
+		data[i] = make([]float64, len(records[i]), len(records[i]))
+		for j := 0; j < len(records[i]); j++ {
+			data[i][j], _ = strconv.ParseFloat(records[i][j], 64)
+		}
+	}
+	return data
+}
+
 func WriteCSVFloat(filename string, data [][]float64) {
 	d := make([][]string, len(data), len(data))
 	for i := 0; i < len(data); i++ {
@@ -166,7 +212,7 @@ func WriteCSVFloat(filename string, data [][]float64) {
 }
 
 func WriteCSV(filename string, data [][]string) {
-	fmt.Println("Writing:", filename)
+	// fmt.Println("Writing:", filename)
 	file, err := os.Create(filename)
 	defer file.Close()
 	if err != nil {

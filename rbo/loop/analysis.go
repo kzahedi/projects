@@ -303,11 +303,10 @@ func dist(a, b []float64) float64 {
 	return math.Sqrt(dx*dx + dy*dy + dz*dz)
 }
 
-func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, results *Results) {
+func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, iterations int, results *Results) {
 	fmt.Println("Calculating TSNE")
 	filename := "covariance.csv"
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)
-	iterations := 5000
 
 	covariances := Select(files, *hand)
 	covariances = Select(covariances, *controller)
@@ -333,6 +332,7 @@ func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, results *
 		v := (*results)[key]
 		v.Point[0] = tsne.Solution[i][0]
 		v.Point[1] = tsne.Solution[i][1]
+		v.ClusteredByTSE = true
 		(*results)[key] = v
 	}
 }

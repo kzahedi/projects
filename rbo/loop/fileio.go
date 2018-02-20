@@ -224,15 +224,19 @@ func WriteCSV(filename string, data [][]string) {
 }
 
 func WriteResults(filename string, results *Results) {
-	s := "# Name, Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position"
-	for key, value := range *results {
-		s = fmt.Sprintf("%s\n%s,%f,%f,%f,%f,%d,%d", s, key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition)
-	}
 	file, err := os.Create(filename)
 	defer file.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 	w := bufio.NewWriter(file)
+	s := "# Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position"
 	w.WriteString(s)
+	for key, value := range *results {
+		if value.ClusteredByTSE == true {
+			s = fmt.Sprintf("\n%s,%f,%f,%f,%f,%d,%d", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition)
+			w.WriteString(s)
+			w.Flush()
+		}
+	}
 }

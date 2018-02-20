@@ -90,7 +90,7 @@ func main() {
 	// Calculate t-SNE
 	////////////////////////////////////////////////////////////
 
-	CalculateTSNE(rbohand2, controller0, directory, &results)
+	CalculateTSNE(rbohand2, controller0, directory, 10000, &results)
 
 	// PrintResults(results)
 	WriteResults("/Users/zahedi/Desktop/results.csv", &results)

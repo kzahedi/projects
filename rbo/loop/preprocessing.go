@@ -250,7 +250,7 @@ func CreateResultsContainer(hands, ctrls []*regexp.Regexp, directory *string, re
 			hfiles = Select(hfiles, *ctrl)
 			for _, s := range hfiles {
 				key := GetKey(s)
-				r := Result{MC_W: 0.0, GraspDistance: 0.0, Point: []float64{0.0, 0.0}, ObjectType: -1, ObjectPosition: -1}
+				r := Result{MC_W: 0.0, GraspDistance: 0.0, Point: []float64{0.0, 0.0}, ObjectType: -1, ObjectPosition: -1, ClusteredByTSE: false}
 				(*results)[key] = r
 			}
 		}

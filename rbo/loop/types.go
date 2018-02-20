@@ -8,6 +8,7 @@ type Result struct {
 	Point          []float64
 	ObjectType     int
 	ObjectPosition int
+	ClusteredByTSE bool
 }
 
 type Results map[string]Result

@@ -6,12 +6,12 @@ import (
 	"github.com/sacado/tsne4go"
 )
 
-func AnalyseData(hand []*regexp.Regexp, controller *regexp.Regexp, directory *string) {
+func AnalyseData(hands, ctrls []*regexp.Regexp, directory *string) {
 	filename := "covariance.csv"
 	cfiles := ListAllFilesRecursivelyByFilename(*directory, filename)
 
-	covariances := Select(files, *hand)
-	covariances = Select(covariances, *controller)
+	covariances := Select(cfiles, *hands)
+	covariances = Select(covariances, *ctrls)
 
 	grasps := ReplaceInAll(covariances, filename, "hand.sofastates.csv")
 

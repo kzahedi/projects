@@ -154,6 +154,7 @@ func ReadCSVToArray(input string) []float64 {
 	return data
 }
 
+// ignores the header line
 func ReadControlFile(input string) [][]float64 {
 	// fmt.Println("Reading:", input)
 
@@ -168,10 +169,10 @@ func ReadControlFile(input string) [][]float64 {
 
 	data := make([][]float64, len(records)-1, len(records)-1)
 
-	for i := 1; i < len(records); i++ {
-		data[i] = make([]float64, len(records[i]), len(records[i]))
+	for i := 0; i < len(records)-1; i++ {
+		data[i] = make([]float64, len(records[i+1]), len(records[i+1]))
 		for j := 0; j < len(records[i]); j++ {
-			data[i][j], _ = strconv.ParseFloat(records[i][j], 64)
+			data[i][j], _ = strconv.ParseFloat(records[i+1][j], 64)
 		}
 	}
 	return data

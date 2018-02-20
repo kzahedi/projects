@@ -242,13 +242,10 @@ func CalculateCovarianceMatrices(hands, ctrls []*regexp.Regexp, directory *strin
 	bar.Finish()
 }
 
-func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int) {
-	fmt.Println("Calculating MC_W (discrete)")
+func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, wBins int) ([]float64, []float64, []int) {
+	fmt.Println("  Getting min/max/bin values for hand")
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
-
-	ctrlFilename := "control.states.csv"
-	ctrlFiles := ListAllFilesRecursivelyByFilename(*directory, ctrlFilename)
 
 	iterations := 0
 	for _, hand := range hands {
@@ -259,7 +256,6 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 		}
 	}
 
-	fmt.Println("  Getting min/max values for x,y,z")
 	bar := pb.StartNew(iterations)
 
 	handMin := make([]float64, 3, 3) // x, y, z -> we bin per dimension
@@ -292,13 +288,41 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 		}
 	}
 
-	fmt.Println("  Getting min/max values for ctrl")
-	bar = pb.StartNew(iterations)
+	minFingerTip := make([]float64, 12, 12)
+	maxFingerTip := make([]float64, 12, 12)
+	binsFingerTip := make([]int, 12, 12)
+
+	for i := 0; i < 11; i++ {
+		minFingerTip[i] = handMin[i%3]
+		maxFingerTip[i] = handMax[i%3]
+		binsFingerTip[i] = wBins
+	}
+
+	bar.Finish()
+
+	return minFingerTip, maxFingerTip, binsFingerTip
+}
+
+func generateControllerMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, aBins int) ([]float64, []float64, []int) {
+	fmt.Println("  Getting min/max/bin values for controller")
+	ctrlFilename := "control.states.csv"
+	ctrlFiles := ListAllFilesRecursivelyByFilename(*directory, ctrlFilename)
+
+	iterations := 0
+	for _, hand := range hands {
+		for _, ctrl := range ctrls {
+			rbohand2Files := Select(ctrlFiles, *hand)
+			rbohand2Files = Select(rbohand2Files, *ctrl)
+			iterations += len(rbohand2Files)
+		}
+	}
+
+	bar := pb.StartNew(iterations)
 
 	ctrlMin := make([]float64, 6, 6) // ctrl pressure states
 	ctrlMax := make([]float64, 6, 6)
 
-	first = true
+	first := true
 
 	for _, hand := range hands {
 		for _, ctrl := range ctrls {
@@ -326,23 +350,36 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 		}
 	}
 
-	fmt.Println("  Calculating MC_W on fingertips")
-	bar = pb.StartNew(iterations)
-
-	minFingerTip := make([]float64, 12, 12)
-	maxFingerTip := make([]float64, 12, 12)
-	binsFingerTip := make([]int, 12, 12)
-
-	for i := 0; i < 11; i++ {
-		minFingerTip[i] = handMin[i%3]
-		maxFingerTip[i] = handMax[i%3]
-		binsFingerTip[i] = wBins
-	}
-
-	binsCtrl := make([]int, 6, 6)
+	ctrlBins := make([]int, 6, 6)
 	for i := 0; i < 6; i++ {
-		binsCtrl[i] = aBins
+		ctrlBins[i] = aBins
 	}
+
+	bar.Finish()
+
+	return ctrlMin, ctrlMin, ctrlBins
+}
+
+func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int) {
+	fmt.Println("Calculating MC_W (discrete)")
+	ctrlFilename := "control.states.csv"
+	handFilename := "hand.sofastates.csv"
+	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
+
+	handMin, handMax, handBins := generateFingerTipMinMaxBins(hands, ctrls, directory, wBins)
+	ctrlMin, ctrlMax, ctrlBins := generateControllerMinMaxBins(hands, ctrls, directory, wBins)
+
+	iterations := 0
+	for _, hand := range hands {
+		for _, ctrl := range ctrls {
+			rbohand2Files := Select(handFiles, *hand)
+			rbohand2Files = Select(rbohand2Files, *ctrl)
+			iterations += len(rbohand2Files)
+		}
+	}
+
+	fmt.Println("  Calculating MC_W on fingertips")
+	bar := pb.StartNew(iterations)
 
 	for _, hand := range hands {
 		for _, ctrl := range ctrls {
@@ -352,15 +389,15 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 			for _, s := range behaviours {
 				ftd := ReadCSVToFloat(s)
 				fingerTipData := extractFingerTipData(ftd)
-				discretisedFingerTipData := dh.Discrestise(fingerTipData, binsFingerTip, minFingerTip, maxFingerTip)
-				univariateFingerTipData := dh.MakeUnivariateRelabelled(discretisedFingerTipData, binsFingerTip)
+				discretisedFingerTipData := dh.Discrestise(fingerTipData, handBins, handMin, handMax)
+				univariateFingerTipData := dh.MakeUnivariateRelabelled(discretisedFingerTipData, handBins)
 
 				c := strings.Replace(s, "analysis", "raw", -1)
 				c = strings.Replace(c, handFilename, ctrlFilename, -1)
 				ctd := ReadCSVToFloat(c)
 				ctrlData := extractControllerData(ctd)
-				discretisedCtrlData := dh.Discrestise(ctrlData, binsCtrl, ctrlMin, ctrlMax)
-				univariateCtrlData := dh.MakeUnivariateRelabelled(discretisedCtrlData, binsCtrl)
+				discretisedCtrlData := dh.Discrestise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
+				univariateCtrlData := dh.MakeUnivariateRelabelled(discretisedCtrlData, ctrlBins)
 
 				w2w1a1 := mergeDataForMCW(univariateFingerTipData, univariateCtrlData)
 				pw2w1a1 := discrete.Emperical3D(w2w1a1)

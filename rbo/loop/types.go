@@ -9,6 +9,7 @@ type Result struct {
 	ObjectType     int
 	ObjectPosition int
 	ClusteredByTSE bool
+	Successful     bool
 }
 
 type Results map[string]Result

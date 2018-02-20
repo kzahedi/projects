@@ -128,6 +128,58 @@ func generateControllerMinMaxBins(hands, ctrls []*regexp.Regexp, directory *stri
 	return ctrlMin, ctrlMin, ctrlBins
 }
 
+func CalculateSuccess(hands, ctrls []*regexp.Regexp, directory *string, height float64, results *Results) {
+	objectFilename := "obstacle.sofastates.csv"
+	objectFiles := ListAllFilesRecursivelyByFilename(*directory, objectFilename)
+
+	osizes := make(map[string]float64)
+	osizes["objectcylinder"] = 20.0
+	osizes["objectcylinderB"] = 40.0
+	osizes["objectbox"] = 35.0
+	osizes["objectboxB"] = 20.0
+	osizes["objectsphere"] = 35.0
+	osizes["objectsphereB"] = 20.0
+	osizes["objectegg"] = 35.0
+	osizes["objecteggB"] = 20.0
+
+	iterations := 0
+	for _, hand := range hands {
+		for _, ctrl := range ctrls {
+			rbohand2Files := Select(objectFiles, *hand)
+			rbohand2Files = Select(rbohand2Files, *ctrl)
+			iterations += len(rbohand2Files)
+		}
+	}
+
+	fmt.Println("Calculating Success")
+	bar := pb.StartNew(iterations)
+
+	for _, hand := range hands {
+		for _, ctrl := range ctrls {
+			objects := Select(objectFiles, *hand)
+			objects = Select(objects, *ctrl)
+
+			for _, s := range objects {
+				data := ReadCSVToFloat(s)
+				maxHeight := data[20][1]
+				for i := 20; i < len(data); i++ {
+					maxHeight = math.Max(maxHeight, data[i][1])
+				}
+
+				key := GetKey(s)
+				objectName := GetObjectName(s)
+
+				v := (*results)[key]
+				v.Successful = ((maxHeight - osizes[objectName]) > height)
+				(*results)[key] = v
+
+				bar.Increment()
+			}
+		}
+	}
+	bar.Finish()
+}
+
 func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int, results *Results) {
 	ctrlFilename := "control.states.csv"
 	handFilename := "hand.sofastates.csv"
@@ -303,7 +355,7 @@ func dist(a, b []float64) float64 {
 	return math.Sqrt(dx*dx + dy*dy + dz*dz)
 }
 
-func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, iterations int, results *Results) {
+func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results *Results) {
 	fmt.Println("Calculating TSNE")
 	filename := "covariance.csv"
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)
@@ -311,13 +363,30 @@ func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, iteration
 	covariances := Select(files, *hand)
 	covariances = Select(covariances, *controller)
 
+	var selected []string
+	if successfulOnly == false {
+		selected = covariances
+	} else {
+		fmt.Println("number:", len(covariances))
+		for _, v := range covariances {
+			key := GetKey(v)
+			elem := (*results)[key]
+			if elem.Successful {
+				selected = append(selected, v)
+			}
+		}
+		fmt.Println("number:", len(selected))
+	}
+
 	var data tsne4go.VectorDistancer
-	data = make([][]float64, len(covariances), len(covariances))
-	for i, f := range covariances {
+	data = make([][]float64, len(selected), len(selected))
+	for i, f := range selected {
 		data[i] = ReadCSVToArray(f)
 	}
 
 	tsne := tsne4go.New(data, nil)
+
+	WriteCSVFloat("/Users/zahedi/Desktop/data.csv", data)
 
 	bar := pb.StartNew(iterations)
 
@@ -327,8 +396,8 @@ func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, iteration
 	}
 	bar.Finish()
 
-	for i := 0; i < len(covariances); i++ {
-		key := GetKey(covariances[i])
+	for i := 0; i < len(selected); i++ {
+		key := GetKey(selected[i])
 		v := (*results)[key]
 		v.Point[0] = tsne.Solution[i][0]
 		v.Point[1] = tsne.Solution[i][1]

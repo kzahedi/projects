@@ -223,11 +223,12 @@ func CalculateCovarianceMatrices(hands, ctrls []*regexp.Regexp, directory *strin
 				for i := 0; i < cols; i++ {
 					r[i] = make([]string, cols, cols)
 					for j := 0; j < cols; j++ {
-						di := data[:][i]
-						dj := data[:][j]
+						di := getColumn(data, i)
+						dj := getColumn(data, j)
 						di = di[start:stop]
 						dj = dj[start:stop]
 						r[i][j] = fmt.Sprintf("%f", stat.Covariance(di, dj, nil))
+						// r[i][j] = fmt.Sprintf("%f", stat.Correlation(di, dj, nil))
 					}
 				}
 
@@ -261,4 +262,17 @@ func CreateResultsContainer(hands, ctrls []*regexp.Regexp, directory *string, re
 func GetKey(s string) string {
 	re := regexp.MustCompile("rbo[a-zA-Z0-9-]+/[a-zA-Z0-9_.-]+")
 	return re.FindAllString(s, -1)[0]
+}
+
+func GetObjectName(s string) string {
+	re := regexp.MustCompile("object[a-zA-Z0-9-]+")
+	return re.FindAllString(s, -1)[0]
+}
+
+func getColumn(data [][]float64, col int) []float64 {
+	r := make([]float64, len(data), len(data))
+	for row := 0; row < len(data); row++ {
+		r[row] = data[row][col]
+	}
+	return r
 }

@@ -47,20 +47,26 @@ func main() {
 	// including preprocessing (conversation to wrist frame)
 	////////////////////////////////////////////////////////////
 
-	ConvertSofaStates("hand.sofastates.txt", hands, ctrls, directory, true)
-	ConvertSofaStates("obstacle.sofastates.txt", hands, ctrls, directory, false)
+	// ConvertSofaStates("hand.sofastates.txt", hands, ctrls, directory, true)
+	// ConvertSofaStates("obstacle.sofastates.txt", hands, ctrls, directory, false)
 
 	////////////////////////////////////////////////////////////
 	// calculate difference behaviour (grasp - prescriptive)
 	////////////////////////////////////////////////////////////
 
-	CalculateDifferenceBehaviour(hands, ctrls, rbohand2p, directory)
+	// CalculateDifferenceBehaviour(hands, ctrls, rbohand2p, directory)
 
 	////////////////////////////////////////////////////////////
 	// calculate co-variance matrices
 	////////////////////////////////////////////////////////////
 
 	CalculateCovarianceMatrices(hands, ctrls, directory, 75)
+
+	////////////////////////////////////////////////////////////
+	// determine if successful or not
+	////////////////////////////////////////////////////////////
+
+	CalculateSuccess(hands, ctrls, directory, 50.0, &results)
 
 	////////////////////////////////////////////////////////////
 	// Calculating MC_W
@@ -90,7 +96,7 @@ func main() {
 	// Calculate t-SNE
 	////////////////////////////////////////////////////////////
 
-	CalculateTSNE(rbohand2, controller0, directory, 2500, &results)
+	CalculateTSNE(rbohand2, controller0, directory, 10000, false, &results)
 
 	// PrintResults(results)
 	WriteResults("/Users/zahedi/Desktop/results.csv", &results)

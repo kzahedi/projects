@@ -234,9 +234,16 @@ func WriteResults(filename string, results *Results) {
 	w.WriteString(s)
 	for key, value := range *results {
 		if value.ClusteredByTSE == true {
-			s = fmt.Sprintf("\n%s,%f,%f,%f,%f,%d,%d", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition)
+			s = fmt.Sprintf("\n%s,%f,%f,%f,%f,%d,%d,%s", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition, boolToString(value.Successful))
 			w.WriteString(s)
 			w.Flush()
 		}
 	}
+}
+
+func boolToString(s bool) string {
+	if s == true {
+		return "true"
+	}
+	return "false"
 }

@@ -239,3 +239,26 @@ func CalculateCovarianceMatrices(hands, ctrls []*regexp.Regexp, directory *strin
 	}
 	bar.Finish()
 }
+
+func CreateResultsContainer(hands, ctrls []*regexp.Regexp, directory *string, results *Results) {
+	filename := "hand.sofastates.csv"
+	files := ListAllFilesRecursivelyByFilename(*directory, filename)
+
+	for _, hand := range hands {
+		for _, ctrl := range ctrls {
+			hfiles := Select(files, *hand)
+			hfiles = Select(hfiles, *ctrl)
+			for _, s := range hfiles {
+				key := GetKey(s)
+				r := Result{MC_W: 0.0, GraspDistance: 0.0, Point: []float64{0.0, 0.0}, ObjectType: -1, ObjectPosition: -1}
+				(*results)[key] = r
+			}
+		}
+	}
+
+}
+
+func GetKey(s string) string {
+	re := regexp.MustCompile("rbo[a-zA-Z0-9-]+/[a-zA-Z0-9_.-]+")
+	return re.FindAllString(s, -1)[0]
+}

@@ -3,9 +3,11 @@ package main
 import "fmt"
 
 type Result struct {
-	MC_W          float64
-	GraspDistance float64
-	Point         []float64
+	MC_W           float64
+	GraspDistance  float64
+	Point          []float64
+	ObjectType     int
+	ObjectPosition int
 }
 
 type Results map[string]Result
@@ -61,6 +63,6 @@ func CreatePose(x, y, z, alpha, beta, gamma float64) Pose {
 
 func PrintResults(r map[string]Result) {
 	for key, value := range r {
-		fmt.Println(fmt.Sprintf("%s: MC_W: %f, Grasp Distance: %f, Point: (%f,%f)", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1]))
+		fmt.Println(fmt.Sprintf("%s: MC_W: %f, Grasp Distance: %f, Point: (%f,%f), Object Type: %d, Object Position %d", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition))
 	}
 }

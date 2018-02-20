@@ -3,17 +3,17 @@ package main
 import (
 	"fmt"
 	"math"
-	"path"
 	"regexp"
 	"strings"
 
 	"github.com/kzahedi/goent/dh"
 	"github.com/kzahedi/goent/discrete"
+	"github.com/sacado/tsne4go"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, wBins int) ([]float64, []float64, []int) {
-	fmt.Println("  Getting min/max/bin values for hand")
+	fmt.Println("Getting min/max/bin values for hand")
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
 
@@ -57,6 +57,7 @@ func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *strin
 			}
 		}
 	}
+	bar.Finish()
 
 	minFingerTip := make([]float64, 12, 12)
 	maxFingerTip := make([]float64, 12, 12)
@@ -68,13 +69,11 @@ func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *strin
 		binsFingerTip[i] = wBins
 	}
 
-	bar.Finish()
-
 	return minFingerTip, maxFingerTip, binsFingerTip
 }
 
 func generateControllerMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, aBins int) ([]float64, []float64, []int) {
-	fmt.Println("  Getting min/max/bin values for controller")
+	fmt.Println("Getting min/max/bin values for controller")
 	ctrlFilename := "control.states.csv"
 	ctrlFiles := ListAllFilesRecursivelyByFilename(*directory, ctrlFilename)
 
@@ -119,19 +118,17 @@ func generateControllerMinMaxBins(hands, ctrls []*regexp.Regexp, directory *stri
 			}
 		}
 	}
+	bar.Finish()
 
 	ctrlBins := make([]int, 6, 6)
 	for i := 0; i < 6; i++ {
 		ctrlBins[i] = aBins
 	}
 
-	bar.Finish()
-
 	return ctrlMin, ctrlMin, ctrlBins
 }
 
 func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int, results *Results) {
-	fmt.Println("Calculating MC_W (discrete)")
 	ctrlFilename := "control.states.csv"
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
@@ -148,7 +145,7 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 		}
 	}
 
-	fmt.Println("  Calculating MC_W on fingertips")
+	fmt.Println("Calculating MC_W on fingertips")
 	bar := pb.StartNew(iterations)
 
 	for _, hand := range hands {
@@ -173,22 +170,15 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 				pw2w1a1 := discrete.Emperical3D(w2w1a1)
 				mc_w := discrete.MorphologicalComputationW(pw2w1a1)
 
-				key := strings.Replace(path.Dir(s), "/analysis", "", -1)
+				key := GetKey(s)
 
-				if v, found := (*results)[key]; found == false {
-					r := Result{MC_W: mc_w, GraspDistance: 0.0, Point: []float64{0.0, 0.0}}
-					(*results)[key] = r
-				} else {
-					v.MC_W = mc_w
-					(*results)[key] = v
-				}
+				v := (*results)[key]
+				v.MC_W = mc_w
+				(*results)[key] = v
 				bar.Increment()
 			}
 		}
 	}
-
-	// output := strings.Replace(s, filename, "mc_w.csv", 1)
-	// WriteCSVFloat(output, data)
 	bar.Finish()
 }
 
@@ -241,10 +231,10 @@ func extractControllerData(data [][]float64) [][]float64 {
 }
 
 func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, lastNSteps, cutOff int, results *Results) {
-	fmt.Println("Calculating MC_W (discrete)")
 	objectFilename := "obstacle.sofastates.csv"
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
+	fcutOff := float64(cutOff)
 
 	iterations := 0
 	for _, hand := range hands {
@@ -255,7 +245,7 @@ func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, la
 		}
 	}
 
-	fmt.Println("  Calculating Grasp Distances")
+	fmt.Println("Calculating Grasp Distances")
 	bar := pb.StartNew(iterations)
 
 	for _, hand := range hands {
@@ -271,22 +261,14 @@ func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, la
 
 				gd := calculateGD(handData, objectData, lastNSteps)
 
-				key := strings.Replace(path.Dir(s), "/analysis", "", -1)
-
-				if v, found := (*results)[key]; found == false {
-					r := Result{MC_W: 0.0, GraspDistance: gd, Point: []float64{0.0, 0.0}}
-					(*results)[key] = r
-				} else {
-					v.GraspDistance = math.Min(gd, cutOff)
-					(*results)[key] = v
-				}
+				key := GetKey(s)
+				v := (*results)[key]
+				v.GraspDistance = math.Min(gd, fcutOff)
+				(*results)[key] = v
 				bar.Increment()
 			}
 		}
 	}
-
-	// output := strings.Replace(s, filename, "mc_w.csv", 1)
-	// WriteCSVFloat(output, data)
 	bar.Finish()
 }
 
@@ -319,4 +301,97 @@ func dist(a, b []float64) float64 {
 	dy := a[1] - b[1]
 	dz := a[2] - b[2]
 	return math.Sqrt(dx*dx + dy*dy + dz*dz)
+}
+
+func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, results *Results) {
+	fmt.Println("Calculating TSNE")
+	filename := "covariance.csv"
+	files := ListAllFilesRecursivelyByFilename(*directory, filename)
+	iterations := 5000
+
+	covariances := Select(files, *hand)
+	covariances = Select(covariances, *controller)
+
+	var data tsne4go.VectorDistancer
+	data = make([][]float64, len(covariances), len(covariances))
+	for i, f := range covariances {
+		data[i] = ReadCSVToArray(f)
+	}
+
+	tsne := tsne4go.New(data, nil)
+
+	bar := pb.StartNew(iterations)
+
+	for i := 0; i < iterations; i++ {
+		tsne.Step()
+		bar.Increment()
+	}
+	bar.Finish()
+
+	for i := 0; i < len(covariances); i++ {
+		key := GetKey(covariances[i])
+		v := (*results)[key]
+		v.Point[0] = tsne.Solution[i][0]
+		v.Point[1] = tsne.Solution[i][1]
+		(*results)[key] = v
+	}
+}
+
+func ExtractObjectPosition(results *Results) {
+	bar := pb.StartNew(len(*results))
+
+	r := make(map[string]int)
+
+	index := 0
+
+	for key, _ := range *results {
+		s := extractPositionString(key)
+		if _, ok := r[s]; ok == false {
+			r[s] = index
+			index++
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+
+	for key, value := range *results {
+		s := extractPositionString(key)
+		value.ObjectPosition = r[s]
+		(*results)[key] = value
+	}
+
+}
+
+func extractPositionString(in string) string {
+	re := regexp.MustCompile("-?[0-9]{1,2}.[0-9]{0,2}_-?[0-9]{1,2}.[0-9]{0,2}_-?[0-9]{1,2}.[0-9]{0,2}")
+	return re.FindAllString(in, -1)[0]
+}
+
+func extractObjectString(in string) string {
+	re := regexp.MustCompile("object[a-zA-Z]+")
+	return re.FindAllString(in, -1)[0]
+}
+
+func ExtractObjectType(results *Results) {
+	bar := pb.StartNew(len(*results))
+
+	r := make(map[string]int)
+
+	index := 0
+
+	for key, _ := range *results {
+		s := extractObjectString(key)
+		if _, ok := r[s]; ok == false {
+			r[s] = index
+			index++
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+
+	for key, value := range *results {
+		s := extractObjectString(key)
+		value.ObjectType = r[s]
+		(*results)[key] = value
+	}
 }

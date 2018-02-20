@@ -58,7 +58,12 @@ func main() {
 	// Calculating MC_W
 	////////////////////////////////////////////////////////////
 
-	CalculateMCW(hands, ctrls, directory, 100, 30)
+	results := make(Results)
+
+	CalculateMCW(hands, ctrls, directory, 100, 30, &results)
+	CalculateGraspDistance(hands, ctrls, directory, 10, 500, &results)
+
+	PrintResults(results)
 
 	////////////////////////////////////////////////////////////
 	// t-SNE

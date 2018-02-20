@@ -1,5 +1,15 @@
 package main
 
+import "fmt"
+
+type Result struct {
+	MC_W          float64
+	GraspDistance float64
+	Point         []float64
+}
+
+type Results map[string]Result
+
 type P3D struct {
 	X float64
 	Y float64
@@ -47,4 +57,10 @@ func PoseSub(a, b Pose) Pose {
 
 func CreatePose(x, y, z, alpha, beta, gamma float64) Pose {
 	return Pose{Position: P3D{X: x, Y: y, Z: z}, Orientation: P3D{X: alpha, Y: beta, Z: gamma}}
+}
+
+func PrintResults(r map[string]Result) {
+	for key, value := range r {
+		fmt.Println(fmt.Sprintf("%s: MC_W: %f, Grasp Distance: %f, Point: (%f,%f)", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1]))
+	}
 }

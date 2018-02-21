@@ -50,6 +50,9 @@ func main() {
 	// ConvertSofaStates("hand.sofastates.txt", hands, ctrls, directory, true)
 	// ConvertSofaStates("obstacle.sofastates.txt", hands, ctrls, directory, false)
 
+	ConvertSofaStatesFull("hand.sofastates.txt", hands, ctrls, directory, true)
+	ConvertSofaStatesFull("obstacle.sofastates.txt", hands, ctrls, directory, false)
+
 	////////////////////////////////////////////////////////////
 	// calculate difference behaviour (grasp - prescriptive)
 	////////////////////////////////////////////////////////////
@@ -100,6 +103,4 @@ func main() {
 
 	// PrintResults(results)
 	WriteResults("/Users/zahedi/Desktop/results.csv", &results)
-
-	fmt.Println(n, " ", len(results))
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/gonum/matrix/mat64"
 	"github.com/westphae/quaternion"
 )
 
@@ -74,9 +75,17 @@ func PoseSub(a, b Pose) Pose {
 	aQ := quaternion.Inv(a.Quaternion)
 	bQ := b.Quaternion
 	cQ := quaternion.Prod(aQ, bQ)
-	cPQ := quaternion.Quaternion{W: 0.0, X: cP.X, Y: cp.Y, Z: cp.Z}
-	cP :=
-	return Pose{Position: cP, Quaternion: quaternion.Quaternion{X: cQ.X, Y: cQ.Y, Z: cQ.Z, W: cQ.W}}
+	m := quaternion.RotMat(aQ)
+
+	var rotInv mat64.Dense
+	var vRot mat64.Dense
+	rot := mat64.NewDense(3, 3, []float64{m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]})
+	v := mat64.NewDense(3, 1, []float64{cP.X, cP.Y, cP.Z})
+
+	rotInv.Inverse(rot)
+	vRot.Mul(&rotInv, v)
+
+	return Pose{Position: P3D{X: vRot.At(0, 0), Y: vRot.At(1, 0), Z: vRot.At(2, 0)}, Quaternion: quaternion.Quaternion{X: cQ.X, Y: cQ.Y, Z: cQ.Z, W: cQ.W}}
 }
 
 func PrintResults(r map[string]Result) {

@@ -137,11 +137,11 @@ func ReadCSVToArray(input string) []float64 {
 		log.Fatal(err)
 	}
 
-	data := make([]float64, 93*93, 93*93)
+	data := make([]float64, len(records)*len(records[0]), len(records)*len(records[0]))
 
 	index := 0
-	for i := 0; i < 93; i++ {
-		for j := 0; j < 93; j++ {
+	for i := 0; i < len(records); i++ {
+		for j := 0; j < len(records[0]); j++ {
 			data[index], _ = strconv.ParseFloat(records[i][j], 64)
 			index++
 		}

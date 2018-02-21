@@ -39,7 +39,9 @@ func main() {
 	////////////////////////////////////////////////////////////
 
 	results := make(Results)
+	segmentResults := make(Results)
 	CreateResultsContainer(hands, ctrls, directory, &results)
+	CreateResultsContainer(hands, ctrls, directory, &segmentResults)
 
 	////////////////////////////////////////////////////////////
 	// convert SOFA files to CSV
@@ -48,55 +50,67 @@ func main() {
 
 	ConvertSofaStates("hand.sofastates.txt", hands, ctrls, directory, true)
 	ConvertSofaStates("obstacle.sofastates.txt", hands, ctrls, directory, false)
+	ConvertSofaStatesSegment("hand.sofastates.txt", hands, ctrls, directory, true)
 
 	////////////////////////////////////////////////////////////
 	// calculate difference behaviour (grasp - prescriptive)
 	////////////////////////////////////////////////////////////
 
-	// CalculateDifferenceBehaviour(hands, ctrls, rbohand2p, directory)
+	CalculateDifferenceBehaviour(hands, ctrls, rbohand2p, directory)
+	CalculateDifferenceBehaviourSegment(hands, ctrls, rbohand2p, directory)
 
 	////////////////////////////////////////////////////////////
 	// calculate co-variance matrices
 	////////////////////////////////////////////////////////////
 
-	// CalculateCovarianceMatrices(hands, ctrls, directory, 75)
+	CalculateCovarianceMatrices(hands, ctrls, directory, 75)
+	CalculateCovarianceMatricesSegments(hands, ctrls, directory, 75)
 
 	////////////////////////////////////////////////////////////
 	// determine if successful or not
 	////////////////////////////////////////////////////////////
 
-	// CalculateSuccess(hands, ctrls, directory, 50.0, &results)
+	CalculateSuccess(hands, ctrls, directory, 50.0, &results)
+	CalculateSuccess(hands, ctrls, directory, 50.0, &segmentResults)
 
 	////////////////////////////////////////////////////////////
 	// Calculating MC_W
 	////////////////////////////////////////////////////////////
 
-	// CalculateMCW(hands, ctrls, directory, 100, 30, &results)
+	CalculateMCW(hands, ctrls, directory, 100, 30, &results)
+	CalculateMCW(hands, ctrls, directory, 100, 30, &segmentResults)
 
 	////////////////////////////////////////////////////////////
 	// Calculating Grasp Distance
 	////////////////////////////////////////////////////////////
 
-	// CalculateGraspDistance(hands, ctrls, directory, 10, 500, &results)
+	CalculateGraspDistance(hands, ctrls, directory, 10, 500, &results)
+	CalculateGraspDistance(hands, ctrls, directory, 10, 500, &segmentResults)
 
 	////////////////////////////////////////////////////////////
 	// Convert object position to integer values
 	////////////////////////////////////////////////////////////
 
-	// ExtractObjectPosition(&results)
+	ExtractObjectPosition(&results)
+	ExtractObjectPosition(&segmentResults)
 
 	////////////////////////////////////////////////////////////
 	// Convert object type to integer values
 	////////////////////////////////////////////////////////////
 
-	// ExtractObjectType(&results)
+	ExtractObjectType(&results)
+	ExtractObjectType(&segmentResults)
 
 	////////////////////////////////////////////////////////////
 	// Calculate t-SNE
 	////////////////////////////////////////////////////////////
 
-	// CalculateTSNE(rbohand2, controller0, directory, 10000, false, &results)
+	CalculateTSNE(rbohand2, controller0, directory, 10000, false, &results)
+	CalculateTSNESegments(rbohand2, controller0, directory, 10000, false, &segmentResults)
 
 	WriteResults("/Users/zahedi/Desktop/results.csv", &results)
+	WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
+
+	PrintResults(results)
 
 }

@@ -2,87 +2,31 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"regexp"
 	"strings"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/gonum/stat"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
-
-// CalculateGlobalVelocities This function calculates the velocities and angular
-// velocities in the world coordinate system, which means that
-// velocity(t)         = position(t) - position(t-1) and
-// angular velocity(t) = orientation(t) - orientation(t-1)
-// velocity(0)         = 0
-// angular velocity(0) = 0
-func CalculateGlobalVelocities(data Data) Data {
-	for trajectoryIndex := 0; trajectoryIndex < data.NrOfTrajectories; trajectoryIndex++ {
-		data.Trajectories[trajectoryIndex].GlobalVelocity = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
-		for frameIndex := 1; frameIndex < data.NrOfDataPoints; frameIndex++ {
-			diff :=
-				PoseSub(
-					data.Trajectories[trajectoryIndex].Frame[frameIndex],
-					data.Trajectories[trajectoryIndex].Frame[frameIndex-1])
-			data.Trajectories[trajectoryIndex].GlobalVelocity[frameIndex] = diff
-		}
-	}
-	return data
-}
-
-func rollPitchYawRotationMatrixInverse(z, y, x float64) *mat64.Dense {
-	r := mat64.NewDense(3, 3, nil)
-	cx := math.Cos(x)
-	cy := math.Cos(y)
-	cz := math.Cos(z)
-
-	sx := math.Sin(x)
-	sy := math.Sin(y)
-	sz := math.Sin(z)
-
-	r.Set(0, 0, cy*cz)
-	r.Set(0, 1, -cy*sz)
-	r.Set(0, 2, sy)
-
-	r.Set(1, 0, cz*sx*sy+cx*sz)
-	r.Set(1, 1, cx*cz-sx*sy*sz)
-	r.Set(1, 2, -cy*sx)
-
-	r.Set(2, 0, -cx*cz*sy+sx*sz)
-	r.Set(2, 1, cz*sx+cx*sy*sz)
-	r.Set(2, 2, cx*cy)
-
-	return r
-}
-
-func transformRotationToLocalCoordinateFrame(pos P3D, orientation P3D) P3D {
-	rotationMatrix := rollPitchYawRotationMatrixInverse(orientation.Z, orientation.Y, orientation.X)
-	rotationMatrix.Inverse(rotationMatrix)
-
-	return P3D{X: 1.0, Y: 2.0, Z: 3.0}
-}
 
 func printFrames(t Trajectory) {
 	for _, f := range t.Frame {
 		fmt.Println(
 			f.Position.X, " ", f.Position.Y, " ", f.Position.Z,
-			f.Orientation.X, " ", f.Orientation.Y, " ", f.Orientation.Z)
+			f.Quaternion.X, " ", f.Quaternion.Y, " ", f.Quaternion.Z, " ", f.Quaternion.W)
 	}
 }
 
-// TransformIntoWristFrame transforms all coordinate frames
+// transformIntoWristFrame transforms all coordinate frames
 // (position and orientation) into the coordinate frame
 // located in the wrist
-// TESTED
-func TransformIntoWristFrame(data Data) Data {
+func transformIntoWristFrame(data Data) Data {
 	// wrist frame is the 'first' trajectory in the data set
 	r := Data{Trajectories: make([]Trajectory, data.NrOfTrajectories-1, data.NrOfTrajectories-1),
 		NrOfDataPoints: data.NrOfDataPoints, NrOfTrajectories: data.NrOfTrajectories - 1}
 
 	wrist := data.Trajectories[0]
 
-	// copying data without wrist frame
 	for trajectoryIndex := 1; trajectoryIndex < data.NrOfTrajectories; trajectoryIndex++ {
 		for frameIndex := 0; frameIndex < data.NrOfDataPoints; frameIndex++ {
 			r.Trajectories[trajectoryIndex-1].Frame =
@@ -91,20 +35,20 @@ func TransformIntoWristFrame(data Data) Data {
 		}
 	}
 
-	// translate all frames with respect to wrist frame: ONLY POSITION
+	// translate all frames with respect to wrist frame
 	for trajectoryIndex := 0; trajectoryIndex < r.NrOfTrajectories; trajectoryIndex++ {
 		for frameIndex := 0; frameIndex < r.NrOfDataPoints; frameIndex++ {
-			origPosition := r.Trajectories[trajectoryIndex].Frame[frameIndex].Position
-			wristPosition := wrist.Frame[frameIndex].Position
-			diff := P3DSub(origPosition, wristPosition)
-			r.Trajectories[trajectoryIndex].Frame[frameIndex].Position = diff
+			origPose := r.Trajectories[trajectoryIndex].Frame[frameIndex]
+			wristPose := wrist.Frame[frameIndex]
+			newPose := PoseSub(origPose, wristPose)
+			r.Trajectories[trajectoryIndex].Frame[frameIndex] = newPose
 		}
 	}
 
 	return r
 }
 
-func ConvertSofaStates(filename string, hands, ctrls []*regexp.Regexp, directory *string, convertToWritsFrame bool) {
+func ConvertSofaStates(filename string, hands, ctrls []*regexp.Regexp, directory *string, convertToWristFrame bool) {
 	fmt.Println("Converting sofa state files:", filename)
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)
 	iterations := 0
@@ -124,9 +68,10 @@ func ConvertSofaStates(filename string, hands, ctrls []*regexp.Regexp, directory
 			rbohand2Files = Select(rbohand2Files, *ctrl)
 			for _, s := range rbohand2Files {
 				data := ReadSofaSates(s) // returns 2d-array of pose
-				data = ConvertAngles(data)
-				if convertToWritsFrame {
-					data = TransformIntoWristFrame(data)
+				if convertToWristFrame {
+					data = transformIntoWristFrame(data)
+					// e.g. finger tip to finger root, palm tip to palm root, thumb tip to thumb root
+					data = extractTipToRootData(data)
 				}
 				outfile := strings.Replace(s, "raw", "analysis", 1)
 				outfile = strings.Replace(outfile, "txt", "csv", 1)
@@ -137,6 +82,28 @@ func ConvertSofaStates(filename string, hands, ctrls []*regexp.Regexp, directory
 		}
 	}
 	bar.Finish()
+}
+
+func extractTipToRootData(data Data) Data {
+	// 6 = index finder tip to root
+	// 5 = middle finger tip to root
+	// 4 = ring finger tip to root
+	// 3 = pinky finger tip to root
+	// 2 = palm finger tip to root
+	// 1 = thumb finger tip to root
+	r := Data{Trajectories: make([]Trajectory, 6, 6), NrOfDataPoints: data.NrOfDataPoints, NrOfTrajectories: 6}
+
+	indices = [][]int{{24, 29}, {20, 24}, {15, 19}, {10, 14}, {5, 9}, {0, 4}}
+
+	for i, v := range indices {
+		root = data.Trajectories[v[0]]
+		tip = data.Trajectories[v[1]]
+		r.Trajectories[i].Frame = make([]Data, data.NrOfDataPoints, data.NrOfDataPoints)
+		for j := 0; j < data.NrOfDataPoints; j++ {
+			r.Trajectories[i].Frame[j] = PoseSub(tip, root)
+		}
+	}
+
 }
 
 // tested

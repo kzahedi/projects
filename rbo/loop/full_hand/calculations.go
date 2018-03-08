@@ -6,12 +6,106 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/gonum/matrix/mat64"
 	"github.com/gonum/stat"
 	"github.com/kzahedi/goent/dh"
 	"github.com/kzahedi/goent/discrete"
 	"github.com/sacado/tsne4go"
+	"github.com/westphae/quaternion"
+
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
+
+type Result struct {
+	MC_W           float64
+	GraspDistance  float64
+	Point          []float64
+	ObjectType     int
+	ObjectPosition int
+	ClusteredByTSE bool
+	Successful     bool
+}
+
+type Results map[string]Result
+
+type P3D struct {
+	X float64
+	Y float64
+	Z float64
+}
+
+type Pose struct {
+	Position   P3D
+	Quaternion quaternion.Quaternion
+}
+
+type Trajectory struct {
+	Frame          []Pose
+	GlobalVelocity []Pose // pose(t) - pose(t-1)
+	LocalVelocity  []Pose // pose(t) - pose(t-1) in local coordinate frame of preceding frame
+}
+
+type Data struct {
+	Trajectories     []Trajectory
+	NrOfDataPoints   int
+	NrOfTrajectories int
+}
+
+func (p *P3D) Add(q P3D) {
+	p.X += q.X
+	p.Y += q.Y
+	p.Z += q.Z
+}
+
+func P3DSub(a, b P3D) P3D {
+	return P3D{X: a.X - b.X, Y: a.Y - b.Y, Z: a.Z - b.Z}
+}
+
+func P3DCopy(a P3D) P3D {
+	return P3D{X: a.X, Y: a.Y, Z: a.Z}
+}
+
+func QCopy(q quaternion.Quaternion) quaternion.Quaternion {
+	return quaternion.Quaternion{X: q.X, Y: q.Y, Z: q.Z, W: q.W}
+}
+
+func PoseCopy(a Pose) Pose {
+	return Pose{Position: P3DCopy(a.Position), Quaternion: QCopy(a.Quaternion)}
+}
+
+func CreatePose(x, y, z, qx, qy, qz, qw float64) Pose {
+	return Pose{Position: P3D{X: x, Y: y, Z: z}, Quaternion: quaternion.Quaternion{X: qx, Y: qy, Z: qz, W: qw}}
+}
+
+func PoseSub(src, target Pose) Pose {
+	srcP := src.Position
+	targetP := target.Position
+	srcQ := src.Quaternion
+	targetQ := target.Quaternion
+
+	newTargetPosition := P3DSub(targetP, srcP)
+
+	srcQInv := quaternion.Inv(srcQ)
+	newTargetQuaternion := quaternion.Prod(srcQInv, targetQ) // relative rotation from src to target
+
+	m := quaternion.RotMat(srcQ)
+
+	var rotInv mat64.Dense
+	var vRot mat64.Dense
+	rot := mat64.NewDense(3, 3, []float64{m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]})
+	v := mat64.NewDense(3, 1, []float64{newTargetPosition.X, newTargetPosition.Y, newTargetPosition.Z})
+
+	rotInv.Inverse(rot)
+	vRot.Mul(&rotInv, v)
+
+	return Pose{Position: P3D{X: vRot.At(0, 0), Y: vRot.At(1, 0), Z: vRot.At(2, 0)}, Quaternion: quaternion.Quaternion{X: newTargetQuaternion.X, Y: newTargetQuaternion.Y, Z: newTargetQuaternion.Z, W: newTargetQuaternion.W}}
+}
+
+func PrintResults(r map[string]Result) {
+	for key, value := range r {
+		fmt.Println(fmt.Sprintf("%s: MC_W: %f, Grasp Distance: %f, Point: (%f,%f), Object Type: %d, Object Position %d", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition))
+	}
+}
 
 func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, wBins int) ([]float64, []float64, []int) {
 	fmt.Println("Getting min/max/bin values for hand")
@@ -209,14 +303,14 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 			for _, s := range behaviours {
 				ftd := ReadCSVToFloat(s)
 				fingerTipData := extractFingerTipData(ftd)
-				discretisedFingerTipData := dh.Discrestise(fingerTipData, handBins, handMin, handMax)
+				discretisedFingerTipData := dh.Discretise(fingerTipData, handBins, handMin, handMax)
 				univariateFingerTipData := dh.MakeUnivariateRelabelled(discretisedFingerTipData, handBins)
 
 				c := strings.Replace(s, "analysis", "raw", -1)
 				c = strings.Replace(c, handFilename, ctrlFilename, -1)
 				ctd := ReadControlFile(c)
 				ctrlData := extractControllerData(ctd)
-				discretisedCtrlData := dh.Discrestise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
+				discretisedCtrlData := dh.Discretise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
 				univariateCtrlData := dh.MakeUnivariateRelabelled(discretisedCtrlData, ctrlBins)
 
 				w2w1a1 := mergeDataForMCW(univariateFingerTipData, univariateCtrlData)
@@ -709,6 +803,8 @@ func ConvertSofaStatesSegment(filename string, hands, ctrls []*regexp.Regexp, di
 			for _, s := range rbohand2Files {
 				data := ReadSofaSates(s) // returns 2d-array of pose
 				if convertToWristFrame {
+					data = transformIntoWristFrame(data)
+					// e.g. finger tip to finger root, palm tip to palm root, thumb tip to thumb root
 					data = extractTipToRootData(data)
 				}
 				outfile := strings.Replace(s, "raw", "analysis", 1)
@@ -729,16 +825,47 @@ func extractTipToRootData(data Data) Data {
 	// 4 = pinky finger tip to root
 	// 5 = palm finger tip to root
 	// 6 = thumb finger tip to root
-	r := Data{Trajectories: make([]Trajectory, 6, 6), NrOfDataPoints: data.NrOfDataPoints, NrOfTrajectories: 6}
+	n := data.NrOfTrajectories - 1
+	r := Data{Trajectories: make([]Trajectory, n, n), NrOfDataPoints: data.NrOfDataPoints, NrOfTrajectories: 6}
 
-	indices := [][]int{{24, 29}, {20, 24}, {15, 19}, {10, 14}, {5, 9}, {0, 4}}
+	indices := [][]int{
+		{29, 30}, // thumb and palm
+		{28, 29},
+		{27, 28},
+		{26, 27},
+		{25, 30},
+		{24, 25},
+		{23, 24},
+		{22, 23},
+		{21, 22},
+		{0, 21},
+		{19, 20}, // pinky finger
+		{18, 19},
+		{17, 18},
+		{16, 17},
+		{0, 16},
+		{14, 15}, // ring finger
+		{13, 14},
+		{12, 13},
+		{11, 12},
+		{0, 11},
+		{9, 10}, // middle finger
+		{8, 9},
+		{7, 8},
+		{6, 7},
+		{0, 6},
+		{5, 6}, // thumb
+		{4, 5},
+		{3, 4},
+		{2, 3},
+		{0, 1}}
 
 	for i, v := range indices {
 		root := data.Trajectories[v[0]]
 		tip := data.Trajectories[v[1]]
-		r.Trajectories[5-i].Frame = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
+		r.Trajectories[i].Frame = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
 		for j := 0; j < data.NrOfDataPoints; j++ {
-			r.Trajectories[5-i].Frame[j] = PoseSub(tip.Frame[j], root.Frame[j])
+			r.Trajectories[i].Frame[j] = PoseSub(tip.Frame[j], root.Frame[j])
 		}
 	}
 

@@ -102,5 +102,11 @@ func main() {
 	CalculateTSNE(rbohand2, controller0, directory, 10000, false, &results)
 
 	// PrintResults(results)
-	WriteResults("/Users/zahedi/Desktop/results.csv", &results)
+	WriteResults("/Users/zahedi/Desktop/iros_results.csv", &results)
+
+	CalculateTSNE(hands, ctrls, directory, 10000, false, &results)
+
+	// PrintResults(results)
+	WriteResults("/Users/zahedi/Desktop/iros_results.csv", &results)
+
 }

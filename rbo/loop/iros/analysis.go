@@ -208,14 +208,14 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 			for _, s := range behaviours {
 				ftd := ReadCSVToFloat(s)
 				fingerTipData := extractFingerTipData(ftd)
-				discretisedFingerTipData := dh.Discrestise(fingerTipData, handBins, handMin, handMax)
+				discretisedFingerTipData := dh.Discretise(fingerTipData, handBins, handMin, handMax)
 				univariateFingerTipData := dh.MakeUnivariateRelabelled(discretisedFingerTipData, handBins)
 
 				c := strings.Replace(s, "analysis", "raw", -1)
 				c = strings.Replace(c, handFilename, ctrlFilename, -1)
 				ctd := ReadControlFile(c)
 				ctrlData := extractControllerData(ctd)
-				discretisedCtrlData := dh.Discrestise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
+				discretisedCtrlData := dh.Discretise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
 				univariateCtrlData := dh.MakeUnivariateRelabelled(discretisedCtrlData, ctrlBins)
 
 				w2w1a1 := mergeDataForMCW(univariateFingerTipData, univariateCtrlData)
@@ -355,7 +355,7 @@ func dist(a, b []float64) float64 {
 	return math.Sqrt(dx*dx + dy*dy + dz*dz)
 }
 
-func CalculateTSNE(hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results *Results) {
+func CalculateTSNE(hand, controller []*regexp.Regexp, directory *string, iterations int, successfulOnly bool, results *Results) {
 	fmt.Println("Calculating TSNE")
 	filename := "covariance.csv"
 	files := ListAllFilesRecursivelyByFilename(*directory, filename)

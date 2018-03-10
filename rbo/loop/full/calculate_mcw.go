@@ -27,7 +27,7 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 		}
 	}
 
-	fmt.Println("Calculating MC_W on fingertips")
+	fmt.Println("Calculating MC_W")
 	bar := pb.StartNew(iterations)
 
 	for _, hand := range hands {

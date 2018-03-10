@@ -12,7 +12,7 @@ func main() {
 	directory := flag.String("d", "/Users/zahedi/projects/TU.Berlin/experiments/run2017011101/", "Directory")
 	iros := flag.Bool("iros", false, "Calculate IROS Results")
 	segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
-	// full := flag.Bool("full", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
+	frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
 	flag.Parse()
 
 	if *directory == "" {
@@ -54,7 +54,7 @@ func main() {
 	// Creating container for all results
 
 	if *iros == true {
-		fmt.Println("Calculating IROS results")
+		fmt.Println(">>> Calculating IROS Results")
 		irosResults := make(Results)
 		CreateResultsContainer(hands, ctrls, directory, &irosResults)
 
@@ -109,7 +109,7 @@ func main() {
 	// Creating container for all results
 
 	if *segment == true {
-		fmt.Println("Calculating Segment results")
+		fmt.Println(">>> Calculating Segment Results")
 		segmentResults := make(Results)
 		CreateResultsContainer(hands, ctrls, directory, &segmentResults)
 
@@ -161,4 +161,52 @@ func main() {
 	// Frame by Frame Results
 	////////////////////////////////////////////////////////////
 
+	if *frameByFrame == true {
+		fmt.Println(">>> Calculating Frame By Frame Results")
+		frameByFrameResults := make(Results)
+		CreateResultsContainer(hands, ctrls, directory, &frameByFrameResults)
+
+		frameByFrameHandSofaStates := "frame.by.frame.hand.sofastates.csv"
+		frameByFrameDiffHandSofaStates := "frame.by.frame.diffed.hand.sofastates.csv"
+		frameByFrameCovariance := "frame.by.frame.covariance.csv"
+
+		// convert SOFA files to CSV
+		// including preprocessing
+
+		ConvertSofaStatesFrameByFrame(handSofaStates, frameByFrameHandSofaStates, hands, ctrls, directory)
+
+		// calculate difference behaviour (grasp - prescriptive)
+
+		CalculateDifferenceBehaviour(frameByFrameHandSofaStates, frameByFrameDiffHandSofaStates, hands, ctrls, rbohand2p, directory)
+
+		// calculate co-variance matrices
+
+		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, hands, ctrls, directory, 75)
+
+		// determine if successful or not
+
+		CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, &frameByFrameResults)
+
+		// Calculating MC_W
+
+		CalculateMCW(hands, ctrls, directory, 100, 30, &frameByFrameResults)
+
+		// Calculating Grasp Distance
+
+		CalculateGraspDistance(hands, ctrls, directory, 10, 500, &frameByFrameResults)
+
+		// Convert object position to integer values
+
+		ExtractObjectPosition(&frameByFrameResults)
+
+		// Convert object type to integer values
+
+		ExtractObjectType(&frameByFrameResults)
+
+		// Calculate t-SNE
+
+		CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, 10000, false, &frameByFrameResults)
+
+		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", &frameByFrameResults)
+	}
 }

@@ -56,6 +56,7 @@ func extractMiddleFingerRoot(data [][]float64) [][]float64 {
 
 	for i := 0; i < len(data); i++ {
 		r[i] = make([]float64, 3, 3)
+		// hand.sofastates.csv is the original data, therefore 6 and not 5
 		r[i][0] = data[i][6*3+0]
 		r[i][1] = data[i][6*3+1]
 		r[i][2] = data[i][6*3+2]

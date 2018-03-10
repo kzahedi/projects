@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -27,14 +28,16 @@ func ConvertSofaStates(filename string, hands, ctrls []*regexp.Regexp, directory
 			rbohand2Files := Select(files, *hand)
 			rbohand2Files = Select(rbohand2Files, *ctrl)
 			for _, s := range rbohand2Files {
-				data := ReadSofaSates(s) // returns 2d-array of pose
-				if convertToWritsFrame {
-					data = transformIntoWristFramePositionOnly(data)
-				}
 				outfile := strings.Replace(s, "raw", "analysis", 1)
 				outfile = strings.Replace(outfile, "txt", "csv", 1)
-				CreateDir(outfile)
-				WritePositions(outfile, data)
+				if _, err := os.Stat(outfile); os.IsNotExist(err) {
+					data := ReadSofaSates(s) // returns 2d-array of pose
+					if convertToWritsFrame {
+						data = transformIntoWristFramePositionOnly(data)
+					}
+					CreateDir(outfile)
+					WritePositions(outfile, data)
+				}
 				bar.Increment()
 			}
 		}

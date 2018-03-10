@@ -38,8 +38,6 @@ func CalculateTSNE(filename string, hand, controller *regexp.Regexp, directory *
 
 	tsne := tsne4go.New(data, nil)
 
-	WriteCSVFloat("/Users/zahedi/Desktop/data.csv", data)
-
 	bar := pb.StartNew(iterations)
 
 	for i := 0; i < iterations; i++ {

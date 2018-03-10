@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -29,27 +30,26 @@ func CalculateCovarianceMatrices(input, output string, hands, ctrls []*regexp.Re
 			differenceBehaviours = Select(differenceBehaviours, *ctrl)
 
 			for _, s := range differenceBehaviours {
+				outfile := strings.Replace(s, input, output, 1)
+				if _, err := os.Stat(outfile); os.IsNotExist(err) {
+					data := ReadCSVToFloat(s)
+					cols := len(data[0])
 
-				data := ReadCSVToFloat(s)
-				cols := len(data[0])
-
-				start := 10
-				stop := 10 + max
-				r := make([][]string, cols, cols)
-				for i := 0; i < cols; i++ {
-					r[i] = make([]string, cols, cols)
-					for j := 0; j < cols; j++ {
-						di := getColumn(data, i)
-						dj := getColumn(data, j)
-						di = di[start:stop]
-						dj = dj[start:stop]
-						r[i][j] = fmt.Sprintf("%f", stat.Covariance(di, dj, nil))
-						// r[i][j] = fmt.Sprintf("%f", stat.Correlation(di, dj, nil))
+					start := 10
+					stop := 10 + max
+					r := make([][]string, cols, cols)
+					for i := 0; i < cols; i++ {
+						r[i] = make([]string, cols, cols)
+						for j := 0; j < cols; j++ {
+							di := getColumn(data, i)
+							dj := getColumn(data, j)
+							di = di[start:stop]
+							dj = dj[start:stop]
+							r[i][j] = fmt.Sprintf("%f", stat.Covariance(di, dj, nil))
+						}
 					}
+					WriteCSV(outfile, r)
 				}
-
-				output := strings.Replace(s, input, output, 1)
-				WriteCSV(output, r)
 				bar.Increment()
 			}
 		}

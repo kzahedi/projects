@@ -196,7 +196,7 @@ func ReadCSVToFloat(input string) [][]float64 {
 	return data
 }
 
-func WriteCSVFloat(filename string, data [][]float64) {
+func WriteCsvFloatMatrix(filename string, data [][]float64) {
 	d := make([][]string, len(data), len(data))
 	for i := 0; i < len(data); i++ {
 		d[i] = make([]string, len(data[i]), len(data[i]))
@@ -204,10 +204,29 @@ func WriteCSVFloat(filename string, data [][]float64) {
 			d[i][j] = fmt.Sprintf("%f", data[i][j])
 		}
 	}
-	WriteCSV(filename, d)
+	WriteCsvMatrix(filename, d)
 }
 
-func WriteCSV(filename string, data [][]string) {
+func WriteCsvFloatVector(filename string, data []float64) {
+	d := make([]string, len(data), len(data))
+	for i := 0; i < len(data); i++ {
+		d[i] = fmt.Sprintf("%f", data[i])
+	}
+	WriteCsvVector(filename, d)
+}
+
+func WriteCsvVector(filename string, data []string) {
+	// fmt.Println("Writing:", filename)
+	file, err := os.Create(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	w := csv.NewWriter(file)
+	w.Write(data)
+}
+
+func WriteCsvMatrix(filename string, data [][]string) {
 	// fmt.Println("Writing:", filename)
 	file, err := os.Create(filename)
 	defer file.Close()
@@ -218,7 +237,7 @@ func WriteCSV(filename string, data [][]string) {
 	w.WriteAll(data)
 }
 
-func WriteResults(filename string, results *Results) {
+func WriteResults(filename string, results Results) {
 	file, err := os.Create(filename)
 	defer file.Close()
 	if err != nil {
@@ -227,9 +246,9 @@ func WriteResults(filename string, results *Results) {
 	w := bufio.NewWriter(file)
 	s := "# Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position"
 	w.WriteString(s)
-	for key, value := range *results {
+	for key, value := range results {
 		if value.ClusteredByTSE == true {
-			s = fmt.Sprintf("\n%s,%f,%f,%f,%f,%d,%d,%s", key, value.MC_W, value.GraspDistance, value.Point[0], value.Point[1], value.ObjectType, value.ObjectPosition, boolToString(value.Successful))
+			s = fmt.Sprintf("\n%s,%f,%f,%f,%f,%d,%d,%s", key, value.MC_W, value.GraspDistance, value.PosX, value.PosY, value.ObjectType, value.ObjectPosition, boolToString(value.Successful))
 			w.WriteString(s)
 			w.Flush()
 		}

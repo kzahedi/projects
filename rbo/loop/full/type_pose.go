@@ -23,25 +23,36 @@ func CreatePose(x, y, z, qx, qy, qz, qw float64) Pose {
 }
 
 func PoseSub(src, target Pose) Pose {
+	var transformedPosition mat64.Dense
 	srcP := src.Position
-	targetP := target.Position
 	srcQ := src.Quaternion
+	srcRot := quaternion.RotMat(srcQ)
+	srcTransformation := mat64.NewDense(4, 4, nil)
+	invSrcTransformation := mat64.NewDense(4, 4, nil)
+
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			srcTransformation.Set(i, j, srcRot[i][j])
+		}
+	}
+
+	srcTransformation.Set(0, 3, srcP.X)
+	srcTransformation.Set(1, 3, srcP.Y)
+	srcTransformation.Set(2, 3, srcP.Z)
+	srcTransformation.Set(3, 3, 1.0)
+
+	invSrcTransformation.Inverse(srcTransformation)
+
+	targetP := target.Position
 	targetQ := target.Quaternion
 
-	newTargetPosition := P3DSub(targetP, srcP)
+	targetPositionVector := mat64.NewDense(4, 1, []float64{targetP.X, targetP.Y, targetP.Z, 0.0})
 
 	srcQInv := quaternion.Inv(srcQ)
 	newTargetQuaternion := quaternion.Prod(srcQInv, targetQ) // relative rotation from src to target
 
-	m := quaternion.RotMat(srcQ)
+	transformedPosition.Mul(invSrcTransformation, targetPositionVector)
+	// fmt.Println(transformedPosition)
 
-	var rotInv mat64.Dense
-	var vRot mat64.Dense
-	rot := mat64.NewDense(3, 3, []float64{m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]})
-	v := mat64.NewDense(3, 1, []float64{newTargetPosition.X, newTargetPosition.Y, newTargetPosition.Z})
-
-	rotInv.Inverse(rot)
-	vRot.Mul(&rotInv, v)
-
-	return Pose{Position: P3D{X: vRot.At(0, 0), Y: vRot.At(1, 0), Z: vRot.At(2, 0)}, Quaternion: quaternion.Quaternion{X: newTargetQuaternion.X, Y: newTargetQuaternion.Y, Z: newTargetQuaternion.Z, W: newTargetQuaternion.W}}
+	return Pose{Position: P3D{X: transformedPosition.At(0, 0), Y: transformedPosition.At(1, 0), Z: transformedPosition.At(2, 0)}, Quaternion: quaternion.Quaternion{X: newTargetQuaternion.X, Y: newTargetQuaternion.Y, Z: newTargetQuaternion.Z, W: newTargetQuaternion.W}}
 }

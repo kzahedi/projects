@@ -73,33 +73,33 @@ func main() {
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(irosDiffHandSofaStates, irosCovariance, hands, ctrls, directory, 75)
+		CalculateCovarianceMatrices(irosDiffHandSofaStates, irosCovariance, hands, ctrls, directory, 75, MODE_FULL)
 
 		// determine if successful or not
 
-		CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, &irosResults)
+		irosResults = CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, irosResults)
 
 		// Calculating MC_W
 
-		CalculateMCW(hands, ctrls, directory, 100, 30, &irosResults)
+		irosResults = CalculateMCW(hands, ctrls, directory, 100, 30, irosResults)
 
 		// Calculating Grasp Distance
 
-		CalculateGraspDistance(hands, ctrls, directory, 10, 500, &irosResults)
+		irosResults = CalculateGraspDistance(hands, ctrls, directory, 10, 500, irosResults)
 
 		// Convert object position to integer values
 
-		ExtractObjectPosition(&irosResults)
+		irosResults = ExtractObjectPosition(irosResults)
 
 		// Convert object type to integer values
 
-		ExtractObjectType(&irosResults)
+		irosResults = ExtractObjectType(irosResults)
 
 		// Calculate t-SNE
 
-		CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, 10000, false, &irosResults)
+		irosResults = CalculateTSNE("iros.covariance.csv", "/Users/zahedi/Desktop/iros.results.csv", rbohand2, controller0, directory, 10000, false, irosResults)
 
-		WriteResults("/Users/zahedi/Desktop/iros.results.csv", &irosResults)
+		// WriteResults("/Users/zahedi/Desktop/iros.results.csv", &irosResults)
 	}
 
 	////////////////////////////////////////////////////////////
@@ -128,33 +128,33 @@ func main() {
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, hands, ctrls, directory, 75)
+		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, hands, ctrls, directory, 75, MODE_SEGMENT)
 
 		// determine if successful or not
 
-		CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, &segmentResults)
+		segmentResults = CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, segmentResults)
 
 		// Calculating MC_W
 
-		CalculateMCW(hands, ctrls, directory, 100, 30, &segmentResults)
+		segmentResults = CalculateMCW(hands, ctrls, directory, 100, 30, segmentResults)
 
 		// Calculating Grasp Distance
 
-		CalculateGraspDistance(hands, ctrls, directory, 10, 500, &segmentResults)
+		segmentResults = CalculateGraspDistance(hands, ctrls, directory, 10, 500, segmentResults)
 
 		// Convert object position to integer values
 
-		ExtractObjectPosition(&segmentResults)
+		segmentResults = ExtractObjectPosition(segmentResults)
 
 		// Convert object type to integer values
 
-		ExtractObjectType(&segmentResults)
+		segmentResults = ExtractObjectType(segmentResults)
 
 		// Calculate t-SNE
 
-		CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, 10000, false, &segmentResults)
+		segmentResults = CalculateTSNE("segment.covariance.csv", "/Users/zahedi/Desktop/segment.results.csv", rbohand2, controller0, directory, 10000, false, segmentResults)
 
-		WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
+		// WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
 	}
 
 	////////////////////////////////////////////////////////////
@@ -181,32 +181,32 @@ func main() {
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, hands, ctrls, directory, 75)
+		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, hands, ctrls, directory, 75, MODE_FRAME_BY_FRAME)
 
 		// determine if successful or not
 
-		CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, &frameByFrameResults)
+		frameByFrameResults = CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, frameByFrameResults)
 
 		// Calculating MC_W
 
-		CalculateMCW(hands, ctrls, directory, 100, 30, &frameByFrameResults)
+		frameByFrameResults = CalculateMCW(hands, ctrls, directory, 100, 30, frameByFrameResults)
 
 		// Calculating Grasp Distance
 
-		CalculateGraspDistance(hands, ctrls, directory, 10, 500, &frameByFrameResults)
+		frameByFrameResults = CalculateGraspDistance(hands, ctrls, directory, 10, 500, frameByFrameResults)
 
 		// Convert object position to integer values
 
-		ExtractObjectPosition(&frameByFrameResults)
+		frameByFrameResults = ExtractObjectPosition(frameByFrameResults)
 
 		// Convert object type to integer values
 
-		ExtractObjectType(&frameByFrameResults)
+		frameByFrameResults = ExtractObjectType(frameByFrameResults)
 
 		// Calculate t-SNE
 
-		CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, 10000, false, &frameByFrameResults)
+		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", "/Users/zahedi/Desktop/frame.by.frame.results.csv", rbohand2, controller0, directory, 10000, false, frameByFrameResults)
 
-		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", &frameByFrameResults)
+		// WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", &frameByFrameResults)
 	}
 }

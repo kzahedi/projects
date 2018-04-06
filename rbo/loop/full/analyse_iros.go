@@ -43,22 +43,6 @@ func ConvertSofaStatesIROS(input, output string, hands, ctrls []*regexp.Regexp, 
 	bar.Finish()
 }
 
-// tested
-func calculateDifferencePositionOnlyIROS(grasp, prescriptive Data) Data {
-	r := Data{Trajectories: make([]Trajectory, grasp.NrOfTrajectories, grasp.NrOfTrajectories), NrOfTrajectories: grasp.NrOfTrajectories, NrOfDataPoints: grasp.NrOfDataPoints}
-
-	for trajectoryIndex := 0; trajectoryIndex < grasp.NrOfTrajectories; trajectoryIndex++ {
-		r.Trajectories[trajectoryIndex].Frame = make([]Pose, r.NrOfDataPoints, r.NrOfDataPoints)
-		for frameIndex := 0; frameIndex < grasp.NrOfDataPoints; frameIndex++ {
-			g := grasp.Trajectories[trajectoryIndex].Frame[frameIndex]
-			p := prescriptive.Trajectories[trajectoryIndex].Frame[frameIndex]
-			diff := PoseSub(g, p)
-			r.Trajectories[trajectoryIndex].Frame[frameIndex] = diff
-		}
-	}
-	return r
-}
-
 // transformIntoWristFramePositionOnly transforms all coordinate frames
 func transformIntoWristFramePositionOnly(data Data) Data {
 	// wrist frame is the 'first' trajectory in the data set

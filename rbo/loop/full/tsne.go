@@ -8,9 +8,9 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateTSNE(filename string, hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results *Results) {
+func CalculateTSNE(input, output string, hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results) Results {
 	fmt.Println("Calculating TSNE")
-	files := ListAllFilesRecursivelyByFilename(*directory, filename)
+	files := ListAllFilesRecursivelyByFilename(*directory, input)
 
 	covariances := Select(files, *hand)
 	covariances = Select(covariances, *controller)
@@ -19,16 +19,18 @@ func CalculateTSNE(filename string, hand, controller *regexp.Regexp, directory *
 	if successfulOnly == false {
 		selected = covariances
 	} else {
-		fmt.Println("number:", len(covariances))
 		for _, v := range covariances {
 			key := GetKey(v)
-			elem := (*results)[key]
+			elem := results[key]
 			if elem.Successful {
+				fmt.Println("found selected")
 				selected = append(selected, v)
 			}
 		}
 		fmt.Println("number:", len(selected))
 	}
+
+	fmt.Println("Clustering on:", len(covariances))
 
 	var data tsne4go.VectorDistancer
 	data = make([][]float64, len(selected), len(selected))
@@ -37,6 +39,8 @@ func CalculateTSNE(filename string, hand, controller *regexp.Regexp, directory *
 	}
 
 	tsne := tsne4go.New(data, nil)
+
+	// fmt.Println(tsne)
 
 	bar := pb.StartNew(iterations)
 
@@ -48,10 +52,14 @@ func CalculateTSNE(filename string, hand, controller *regexp.Regexp, directory *
 
 	for i := 0; i < len(selected); i++ {
 		key := GetKey(selected[i])
-		v := (*results)[key]
-		v.Point[0] = tsne.Solution[i][0]
-		v.Point[1] = tsne.Solution[i][1]
+		v := results[key]
+		v.PosX = tsne.Solution[i][0]
+		v.PosY = tsne.Solution[i][1]
 		v.ClusteredByTSE = true
-		(*results)[key] = v
+		results[key] = v
 	}
+
+	WriteResults(output, results)
+
+	return results
 }

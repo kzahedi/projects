@@ -8,7 +8,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateSuccess(input string, hands, ctrls []*regexp.Regexp, directory *string, height float64, results *Results) {
+func CalculateSuccess(input string, hands, ctrls []*regexp.Regexp, directory *string, height float64, results Results) Results {
 	objectFiles := ListAllFilesRecursivelyByFilename(*directory, input)
 
 	osizes := make(map[string]float64)
@@ -48,13 +48,15 @@ func CalculateSuccess(input string, hands, ctrls []*regexp.Regexp, directory *st
 				key := GetKey(s)
 				objectName := GetObjectName(s)
 
-				v := (*results)[key]
+				v := results[key]
 				v.Successful = ((maxHeight - osizes[objectName]) > height)
-				(*results)[key] = v
+				results[key] = v
 
 				bar.Increment()
 			}
 		}
 	}
 	bar.Finish()
+
+	return results
 }

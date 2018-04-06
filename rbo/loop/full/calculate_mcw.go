@@ -10,7 +10,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int, results *Results) {
+func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int, results Results) Results {
 	ctrlFilename := "control.states.csv"
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
@@ -54,14 +54,16 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 
 				key := GetKey(s)
 
-				v := (*results)[key]
+				v := results[key]
 				v.MC_W = mc_w
-				(*results)[key] = v
+				results[key] = v
 				bar.Increment()
 			}
 		}
 	}
 	bar.Finish()
+
+	return results
 }
 
 // takes world states W and action states A and returns the sequence W',W,A

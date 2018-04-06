@@ -9,7 +9,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, lastNSteps, cutOff int, results *Results) {
+func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, lastNSteps, cutOff int, results Results) Results {
 	objectFilename := "obstacle.sofastates.csv"
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
@@ -41,14 +41,15 @@ func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, la
 				gd := calculateGD(handData, objectData, lastNSteps)
 
 				key := GetKey(s)
-				v := (*results)[key]
+				v := results[key]
 				v.GraspDistance = math.Min(gd, fcutOff)
-				(*results)[key] = v
+				results[key] = v
 				bar.Increment()
 			}
 		}
 	}
 	bar.Finish()
+	return results
 }
 
 func extractMiddleFingerRoot(data [][]float64) [][]float64 {

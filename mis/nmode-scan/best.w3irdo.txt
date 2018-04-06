@@ -1,0 +1,9 @@
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_3_modules_distance-7/generation-993.xml, 288.942000, 201.789840
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_1_module_distance-24/generation-998.xml, 287.094000, 139.564280
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_3_modules_uniform-31/generation-990.xml, 276.997000, 142.635580
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_3_modules_distance-7/generation-999.xml, 273.687000, 202.355400
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_3_modules_uniform-42/generation-995.xml, 273.587000, 188.933200
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_1_module_uniform-53/generation-993.xml, 267.426000, 98.094110
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_1_module_distance-75/generation-993.xml, 263.920000, 119.358710
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_1_module_distance-55/generation-994.xml, 263.200000, 104.969490
+/Volumes/LaCie/nmode.paper/nmode.w3irdo//w3irdo_3_modules_distance-7/generation-996.xml, 262.112000, 197.383000

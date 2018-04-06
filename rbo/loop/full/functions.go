@@ -41,14 +41,14 @@ func ReplaceInAll(lst []string, a, b string) []string {
 	return r
 }
 
-func ExtractObjectPosition(results *Results) {
-	bar := pb.StartNew(len(*results))
+func ExtractObjectPosition(results Results) Results {
+	bar := pb.StartNew(len(results))
 
 	r := make(map[string]int)
 
 	index := 0
 
-	for key, _ := range *results {
+	for key, _ := range results {
 		s := extractPositionString(key)
 		if _, ok := r[s]; ok == false {
 			r[s] = index
@@ -58,12 +58,13 @@ func ExtractObjectPosition(results *Results) {
 	}
 	bar.Finish()
 
-	for key, value := range *results {
+	for key, value := range results {
 		s := extractPositionString(key)
 		value.ObjectPosition = r[s]
-		(*results)[key] = value
+		results[key] = value
 	}
 
+	return results
 }
 
 func extractPositionString(in string) string {
@@ -76,14 +77,14 @@ func extractObjectString(in string) string {
 	return re.FindAllString(in, -1)[0]
 }
 
-func ExtractObjectType(results *Results) {
-	bar := pb.StartNew(len(*results))
+func ExtractObjectType(results Results) Results {
+	bar := pb.StartNew(len(results))
 
 	r := make(map[string]int)
 
 	index := 0
 
-	for key, _ := range *results {
+	for key, _ := range results {
 		s := extractObjectString(key)
 		if _, ok := r[s]; ok == false {
 			r[s] = index
@@ -93,11 +94,13 @@ func ExtractObjectType(results *Results) {
 	}
 	bar.Finish()
 
-	for key, value := range *results {
+	for key, value := range results {
 		s := extractObjectString(key)
 		value.ObjectType = r[s]
-		(*results)[key] = value
+		results[key] = value
 	}
+
+	return results
 }
 
 func GetKey(s string) string {

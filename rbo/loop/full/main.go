@@ -13,9 +13,15 @@ func main() {
 	iros := flag.Bool("iros", false, "Calculate IROS Results")
 	segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
 	frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
+	extractClusters := flag.String("extract", "", "Extract clusters from CSV File")
 	flag.Parse()
 
-	if *directory == "" {
+	if *extractClusters != "" {
+		fmt.Println("CSV File given.")
+		data := CalculateInteretingClusters(*extractClusters, 300.0, 0.2)
+		WriteResults(*extractClusters, data)
+		os.Exit(0)
+	} else if *directory == "" {
 		fmt.Println("Please provide a directory to analyse.")
 		os.Exit(0)
 	}

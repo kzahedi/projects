@@ -1,8 +1,8 @@
 package main
 
-func CalculateInteretingClusters(filename string, graspDistanceCutoff, percentage float64) Results {
+import "fmt"
 
-	data := ReadResults(filename)
+func CalculateInteretingClusters(data Results, graspDistanceCutoff, percentage float64) Results {
 
 	maxMCW := -1.0
 	minMCW := -1.0
@@ -37,6 +37,9 @@ func CalculateInteretingClusters(filename string, graspDistanceCutoff, percentag
 		if minGraspDistance > gd {
 			minGraspDistance = gd
 		}
+		if maxGraspDistance < gd {
+			maxGraspDistance = gd
+		}
 	}
 
 	mcwDiff := maxMCW * percentage
@@ -48,6 +51,9 @@ func CalculateInteretingClusters(filename string, graspDistanceCutoff, percentag
 	stupidGraspDistance := maxGraspDistance - gdDiff
 	intelligentGraspDistance := minGraspDistance + gdDiff
 
+	nrOfIntelligent := 0
+	nrOfStupid := 0
+	nrOfNone := 0
 	for key, value := range data {
 		mcw := value.MC_W
 		gd := value.GraspDistance
@@ -58,12 +64,21 @@ func CalculateInteretingClusters(filename string, graspDistanceCutoff, percentag
 		if mcw < stupidMCW && gd > stupidGraspDistance {
 			value.Stupid = true
 			value.Intelligent = false
+			nrOfStupid++
 		} else if mcw > intelligentMCW && gd < intelligentGraspDistance {
 			value.Stupid = false
 			value.Intelligent = true
+			nrOfIntelligent++
+		} else {
+			nrOfNone++
 		}
 		data[key] = value
 	}
+
+	fmt.Println(fmt.Sprintf("Intelligent %d", nrOfIntelligent))
+	fmt.Println(fmt.Sprintf("Stupid      %d", nrOfStupid))
+	fmt.Println(fmt.Sprintf("None        %d", nrOfNone))
+	fmt.Println(fmt.Sprintf("Sum         %d", nrOfIntelligent+nrOfStupid+nrOfNone))
 
 	return data
 }

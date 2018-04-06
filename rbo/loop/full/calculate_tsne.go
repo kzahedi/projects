@@ -8,7 +8,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateTSNE(input, output string, hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results) Results {
+func CalculateTSNE(input string, hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results) Results {
 	fmt.Println("Calculating TSNE")
 	files := ListAllFilesRecursivelyByFilename(*directory, input)
 
@@ -58,8 +58,6 @@ func CalculateTSNE(input, output string, hand, controller *regexp.Regexp, direct
 		v.ClusteredByTSE = true
 		results[key] = v
 	}
-
-	WriteResults(output, results)
 
 	return results
 }

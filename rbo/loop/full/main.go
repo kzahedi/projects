@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"regexp"
 )
 
@@ -13,18 +12,7 @@ func main() {
 	iros := flag.Bool("iros", false, "Calculate IROS Results")
 	segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
 	frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
-	extractClusters := flag.String("extract", "", "Extract clusters from CSV File")
 	flag.Parse()
-
-	if *extractClusters != "" {
-		fmt.Println("CSV File given.")
-		data := CalculateInteretingClusters(*extractClusters, 300.0, 0.2)
-		WriteResults(*extractClusters, data)
-		os.Exit(0)
-	} else if *directory == "" {
-		fmt.Println("Please provide a directory to analyse.")
-		os.Exit(0)
-	}
 
 	////////////////////////////////////////////////////////////
 	// define regexp patterns
@@ -103,9 +91,14 @@ func main() {
 
 		// Calculate t-SNE
 
-		irosResults = CalculateTSNE("iros.covariance.csv", "/Users/zahedi/Desktop/iros.results.csv", rbohand2, controller0, directory, 10000, false, irosResults)
+		irosResults = CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, 10000, false, irosResults)
 
-		// WriteResults("/Users/zahedi/Desktop/iros.results.csv", &irosResults)
+		// Calculate Clusters
+
+		irosResults = CalculateInteretingClusters(irosResults, 300.0, 0.15)
+
+		WriteResults("/Users/zahedi/Desktop/iros.results.csv", irosResults)
+
 	}
 
 	////////////////////////////////////////////////////////////
@@ -158,7 +151,13 @@ func main() {
 
 		// Calculate t-SNE
 
-		segmentResults = CalculateTSNE("segment.covariance.csv", "/Users/zahedi/Desktop/segment.results.csv", rbohand2, controller0, directory, 10000, false, segmentResults)
+		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, 10000, false, segmentResults)
+
+		// Calculate Clusters
+
+		segmentResults = CalculateInteretingClusters(segmentResults, 300.0, 0.15)
+
+		WriteResults("/Users/zahedi/Desktop/segment.results.csv", segmentResults)
 
 		// WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
 	}
@@ -211,8 +210,12 @@ func main() {
 
 		// Calculate t-SNE
 
-		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", "/Users/zahedi/Desktop/frame.by.frame.results.csv", rbohand2, controller0, directory, 10000, false, frameByFrameResults)
+		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, 10000, false, frameByFrameResults)
 
-		// WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", &frameByFrameResults)
+		// Calculate Clusters
+
+		frameByFrameResults = CalculateInteretingClusters(frameByFrameResults, 300.0, 0.15)
+
+		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", frameByFrameResults)
 	}
 }

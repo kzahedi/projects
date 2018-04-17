@@ -50,16 +50,29 @@ func transformSegment(data Data) Data {
 	// 4 = pinky finger tip to root
 	// 5 = palm finger tip to root
 	// 6 = thumb finger tip to root
-	r := Data{Trajectories: make([]Trajectory, 6, 6), NrOfDataPoints: data.NrOfDataPoints, NrOfTrajectories: 6}
+	r := Data{Trajectories: make([]Trajectory, 12, 12), NrOfDataPoints: data.NrOfDataPoints, NrOfTrajectories: 12}
 
-	indices := [][]int{{24, 29}, {20, 24}, {15, 19}, {10, 14}, {5, 9}, {0, 4}}
+	// each finger has two segments so that correlations can be calculated
+	indices := [][]int{
+		{0, 2},   // index finger - first half
+		{2, 4},   // index finger - second half
+		{5, 7},   // middle finger - first half
+		{7, 9},   // middle finger - second half
+		{10, 12}, // ring finger - first half
+		{12, 14}, // ring finger - second half
+		{15, 17}, // pinky finger - first half
+		{17, 19}, // pinky finger - second half
+		{20, 22}, // palm - first half
+		{22, 24}, // palm - second half
+		{24, 26}, // thumb - first half
+		{26, 29}} // thumb - second half
 
 	for i, v := range indices {
 		root := data.Trajectories[v[0]]
 		tip := data.Trajectories[v[1]]
-		r.Trajectories[5-i].Frame = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
+		r.Trajectories[i].Frame = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
 		for j := 0; j < data.NrOfDataPoints; j++ {
-			r.Trajectories[5-i].Frame[j] = PoseSub(tip.Frame[j], root.Frame[j])
+			r.Trajectories[i].Frame[j] = PoseSub(tip.Frame[j], root.Frame[j])
 		}
 	}
 

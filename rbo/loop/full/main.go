@@ -115,6 +115,7 @@ func main() {
 		AnalyseStupid(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.stupid.csv")
 
 		ConvertIROSMatrixResults("/Users/zahedi/Desktop/iros.intelligent.csv")
+		ConvertIROSMatrixResults("/Users/zahedi/Desktop/iros.stupid.csv")
 
 	}
 
@@ -180,6 +181,10 @@ func main() {
 
 		AnalyseIntelligent(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.intelligent.csv")
 		AnalyseStupid(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.stupid.csv")
+
+		ConvertSegmentMatrixResults("/Users/zahedi/Desktop/segment.intelligent.csv")
+		ConvertSegmentMatrixResults("/Users/zahedi/Desktop/segment.stupid.csv")
+
 	}
 
 	////////////////////////////////////////////////////////////

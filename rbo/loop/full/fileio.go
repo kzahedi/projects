@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strconv"
@@ -236,79 +235,4 @@ func WriteCsvMatrix(filename string, data [][]string) {
 	}
 	w := csv.NewWriter(file)
 	w.WriteAll(data)
-}
-
-func WriteResults(filename string, results Results) {
-	file, err := os.Create(filename)
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-	w := bufio.NewWriter(file)
-	s := "# Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position, Successful"
-	w.WriteString(s)
-	for key, value := range results {
-		if value.ClusteredByTSE == true {
-			s = fmt.Sprintf("\n%s,%f,%f,%f,%f,%d,%d,%t,%t,%t", key, value.MC_W, value.GraspDistance, value.PosX, value.PosY, value.ObjectType, value.ObjectPosition, value.Successful, value.Intelligent, value.Stupid)
-			w.WriteString(s)
-			w.Flush()
-		}
-	}
-}
-
-func ReadResults(filename string) Results {
-	data := make(Results)
-
-	file, _ := os.Open(filename)
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	record, err := reader.Read()
-	for err != io.EOF {
-
-		if strings.HasPrefix(record[0], "#") {
-			record, err = reader.Read()
-			continue
-		}
-
-		// "# Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position, Successful"
-		experiment := record[0]
-		mcw, _ := strconv.ParseFloat(record[1], 64)
-		graspDistance, _ := strconv.ParseFloat(record[2], 64)
-		posX, _ := strconv.ParseFloat(record[3], 64)
-		posY, _ := strconv.ParseFloat(record[4], 64)
-		objectType, _ := strconv.ParseInt(record[5], 10, 64)
-		objectPosition, _ := strconv.ParseInt(record[6], 10, 64)
-
-		successfull := false
-		if record[7] == "true" {
-			successfull = true
-		}
-
-		intelligent := false
-		if len(record) > 7 {
-			if record[7] == "true" {
-				intelligent = true
-			}
-		}
-
-		stupid := false
-		if len(record) > 8 {
-			if record[8] == "true" {
-				stupid = true
-			}
-		}
-
-		r := Result{MC_W: mcw, GraspDistance: graspDistance, PosX: posX, PosY: posY, ObjectType: int(objectType), ObjectPosition: int(objectPosition), ClusteredByTSE: true, Successful: successfull, Intelligent: intelligent, Stupid: stupid}
-
-		data[experiment] = r
-
-		record, err = reader.Read()
-	}
-
-	return data
-}
-
-func boolToString(s bool) string {
-	return fmt.Sprintf("%t", s)
 }

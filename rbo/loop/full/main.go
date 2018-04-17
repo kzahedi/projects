@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"regexp"
 )
 
@@ -12,7 +13,18 @@ func main() {
 	iros := flag.Bool("iros", false, "Calculate IROS Results")
 	segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
 	frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
+	percentage := flag.Float64("p", 0.15, "Cut-off percentage for intelligent and stupid")
+	maxGraspDistance := flag.Float64("mgd", 300.0, "Cut-off for grasp distance")
+	k := flag.Int("k", 10, "k-nearest neighbour after clustering")
+	test := flag.String("test", "", "Test")
 	flag.Parse()
+
+	if *test != "" {
+		data := ReadResults(*test)
+		data = CalculateInteretingClusters(data, *maxGraspDistance, *percentage, *k)
+		WriteResults("/Users/zahedi/Desktop/iros.results.csv", data)
+		os.Exit(0)
+	}
 
 	////////////////////////////////////////////////////////////
 	// define regexp patterns
@@ -91,13 +103,18 @@ func main() {
 
 		// Calculate t-SNE
 
-		irosResults = CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, 10000, false, irosResults)
+		irosResults = CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, 5000, false, irosResults)
 
 		// Calculate Clusters
 
-		irosResults = CalculateInteretingClusters(irosResults, 300.0, 0.15)
+		irosResults = CalculateInteretingClusters(irosResults, *maxGraspDistance, *percentage, *k)
 
 		WriteResults("/Users/zahedi/Desktop/iros.results.csv", irosResults)
+
+		AnalyseIntelligent(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.intelligent.csv")
+		AnalyseStupid(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.stupid.csv")
+
+		ConvertIROSMatrixResults("/Users/zahedi/Desktop/iros.intelligent.csv")
 
 	}
 
@@ -151,15 +168,18 @@ func main() {
 
 		// Calculate t-SNE
 
-		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, 10000, false, segmentResults)
+		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, 5000, false, segmentResults)
 
 		// Calculate Clusters
 
-		segmentResults = CalculateInteretingClusters(segmentResults, 300.0, 0.15)
+		segmentResults = CalculateInteretingClusters(segmentResults, *maxGraspDistance, *percentage, *k)
 
 		WriteResults("/Users/zahedi/Desktop/segment.results.csv", segmentResults)
 
 		// WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
+
+		AnalyseIntelligent(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.intelligent.csv")
+		AnalyseStupid(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.stupid.csv")
 	}
 
 	////////////////////////////////////////////////////////////
@@ -210,12 +230,15 @@ func main() {
 
 		// Calculate t-SNE
 
-		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, 10000, false, frameByFrameResults)
+		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, 5000, false, frameByFrameResults)
 
 		// Calculate Clusters
 
-		frameByFrameResults = CalculateInteretingClusters(frameByFrameResults, 300.0, 0.15)
+		frameByFrameResults = CalculateInteretingClusters(frameByFrameResults, *maxGraspDistance, *percentage, *k)
 
 		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", frameByFrameResults)
+
+		AnalyseIntelligent(frameByFrameResults, *directory, frameByFrameCovariance, "/Users/zahedi/Desktop/frameByFrame.intelligent.csv")
+		AnalyseStupid(frameByFrameResults, *directory, frameByFrameCovariance, "/Users/zahedi/Desktop/frameByFrame.stupid.csv")
 	}
 }

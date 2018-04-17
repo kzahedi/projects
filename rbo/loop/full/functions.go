@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -42,6 +43,7 @@ func ReplaceInAll(lst []string, a, b string) []string {
 }
 
 func ExtractObjectPosition(results Results) Results {
+	fmt.Println("Extract Object Position")
 	bar := pb.StartNew(len(results))
 
 	r := make(map[string]int)
@@ -78,6 +80,7 @@ func extractObjectString(in string) string {
 }
 
 func ExtractObjectType(results Results) Results {
+	fmt.Println("Extract Object Type")
 	bar := pb.StartNew(len(results))
 
 	r := make(map[string]int)

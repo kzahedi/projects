@@ -48,6 +48,7 @@ func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, la
 			}
 		}
 	}
+
 	bar.Finish()
 	return results
 }

@@ -40,7 +40,8 @@ func main() {
 	controller1 := regexp.MustCompile(".*-controller1-.*")
 	controller2 := regexp.MustCompile(".*-controller2-.*")
 
-	hands := []*regexp.Regexp{rbohand2, rbohand2p, rbohandkz1, rbohandkz1p, rbohandkz2, rbohandkz2p}
+	grasps := []*regexp.Regexp{rbohand2, rbohandkz1, rbohandkz2}
+	prescritives := []*regexp.Regexp{rbohand2p, rbohandkz1p, rbohandkz2p}
 	ctrls := []*regexp.Regexp{controller0, controller1, controller2}
 
 	////////////////////////////////////////////////////////////
@@ -50,8 +51,10 @@ func main() {
 	handSofaStates := "hand.sofastates.txt"
 	obstacleSofaStates := "obstacle.sofastates.txt"
 	obstacleSofaStatesCsv := "obstacle.sofastates.csv"
-	ConvertSofaStates(obstacleSofaStates, hands, ctrls, directory, false)
-	ConvertSofaStates(handSofaStates, hands, ctrls, directory, false)
+	ConvertSofaStates(obstacleSofaStates, grasps, ctrls, directory, false)
+	ConvertSofaStates(handSofaStates, grasps, ctrls, directory, false)
+	ConvertSofaStates(obstacleSofaStates, prescritives, ctrls, directory, false)
+	ConvertSofaStates(handSofaStates, prescritives, ctrls, directory, false)
 
 	////////////////////////////////////////////////////////////
 	// IROS Results
@@ -62,7 +65,7 @@ func main() {
 	if *iros == true {
 		fmt.Println(">>> Calculating IROS Results")
 		irosResults := make(Results)
-		CreateResultsContainer(hands, ctrls, directory, &irosResults)
+		CreateResultsContainer(grasps, ctrls, directory, &irosResults)
 
 		irosHandSofaStates := "iros.hand.sofastates.csv"
 		irosDiffHandSofaStates := "iros.diffed.hand.sofastates.csv"
@@ -71,27 +74,28 @@ func main() {
 		// convert SOFA files to CSV
 		// including preprocessing
 
-		ConvertSofaStatesIROS(handSofaStates, irosHandSofaStates, hands, ctrls, directory)
+		ConvertSofaStatesIROS(handSofaStates, irosHandSofaStates, grasps, ctrls, directory)
+		ConvertSofaStatesIROS(handSofaStates, irosHandSofaStates, prescritives, ctrls, directory)
 
 		// calculate difference behaviour (grasp - prescriptive)
 
-		CalculateDifferenceBehaviour(irosHandSofaStates, irosDiffHandSofaStates, hands, ctrls, rbohand2p, directory)
+		CalculateDifferenceBehaviour(irosHandSofaStates, irosDiffHandSofaStates, grasps, ctrls, directory)
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(irosDiffHandSofaStates, irosCovariance, hands, ctrls, directory, 75, MODE_FULL)
+		CalculateCovarianceMatrices(irosDiffHandSofaStates, irosCovariance, grasps, ctrls, directory, 75, MODE_FULL)
 
 		// determine if successful or not
 
-		irosResults = CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, irosResults)
+		irosResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, 50.0, irosResults)
 
 		// Calculating MC_W
 
-		irosResults = CalculateMCW(hands, ctrls, directory, 100, 30, irosResults)
+		irosResults = CalculateMCW(grasps, ctrls, directory, 100, 30, irosResults)
 
 		// Calculating Grasp Distance
 
-		irosResults = CalculateGraspDistance(hands, ctrls, directory, 10, 500, irosResults)
+		irosResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, irosResults)
 
 		// Convert object position to integer values
 
@@ -128,7 +132,7 @@ func main() {
 	if *segment == true {
 		fmt.Println(">>> Calculating Segment Results")
 		segmentResults := make(Results)
-		CreateResultsContainer(hands, ctrls, directory, &segmentResults)
+		CreateResultsContainer(grasps, ctrls, directory, &segmentResults)
 
 		segmentHandSofaStates := "segment.hand.sofastates.csv"
 		segmentDiffHandSofaStates := "segment.diffed.hand.sofastates.csv"
@@ -137,27 +141,28 @@ func main() {
 		// convert SOFA files to CSV
 		// including preprocessing
 
-		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, hands, ctrls, directory)
+		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, grasps, ctrls, directory)
+		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, prescritives, ctrls, directory)
 
 		// calculate difference behaviour (grasp - prescriptive)
 
-		CalculateDifferenceBehaviour(segmentHandSofaStates, segmentDiffHandSofaStates, hands, ctrls, rbohand2p, directory)
+		CalculateDifferenceBehaviour(segmentHandSofaStates, segmentDiffHandSofaStates, grasps, ctrls, directory)
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, hands, ctrls, directory, 75, MODE_SEGMENT)
+		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, grasps, ctrls, directory, 75, MODE_SEGMENT)
 
 		// determine if successful or not
 
-		segmentResults = CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, segmentResults)
+		segmentResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, 50.0, segmentResults)
 
 		// Calculating MC_W
 
-		segmentResults = CalculateMCW(hands, ctrls, directory, 100, 30, segmentResults)
+		segmentResults = CalculateMCW(grasps, ctrls, directory, 100, 30, segmentResults)
 
 		// Calculating Grasp Distance
 
-		segmentResults = CalculateGraspDistance(hands, ctrls, directory, 10, 500, segmentResults)
+		segmentResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, segmentResults)
 
 		// Convert object position to integer values
 
@@ -194,7 +199,7 @@ func main() {
 	if *frameByFrame == true {
 		fmt.Println(">>> Calculating Frame By Frame Results")
 		frameByFrameResults := make(Results)
-		CreateResultsContainer(hands, ctrls, directory, &frameByFrameResults)
+		CreateResultsContainer(grasps, ctrls, directory, &frameByFrameResults)
 
 		frameByFrameHandSofaStates := "frame.by.frame.hand.sofastates.csv"
 		frameByFrameDiffHandSofaStates := "frame.by.frame.diffed.hand.sofastates.csv"
@@ -203,27 +208,28 @@ func main() {
 		// convert SOFA files to CSV
 		// including preprocessing
 
-		ConvertSofaStatesFrameByFrame(handSofaStates, frameByFrameHandSofaStates, hands, ctrls, directory)
+		ConvertSofaStatesFrameByFrame(handSofaStates, frameByFrameHandSofaStates, grasps, ctrls, directory)
+		ConvertSofaStatesFrameByFrame(handSofaStates, frameByFrameHandSofaStates, prescritives, ctrls, directory)
 
 		// calculate difference behaviour (grasp - prescriptive)
 
-		CalculateDifferenceBehaviour(frameByFrameHandSofaStates, frameByFrameDiffHandSofaStates, hands, ctrls, rbohand2p, directory)
+		CalculateDifferenceBehaviour(frameByFrameHandSofaStates, frameByFrameDiffHandSofaStates, grasps, ctrls, directory)
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, hands, ctrls, directory, 75, MODE_FRAME_BY_FRAME)
+		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, grasps, ctrls, directory, 75, MODE_FRAME_BY_FRAME)
 
 		// determine if successful or not
 
-		frameByFrameResults = CalculateSuccess(obstacleSofaStatesCsv, hands, ctrls, directory, 50.0, frameByFrameResults)
+		frameByFrameResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, 50.0, frameByFrameResults)
 
 		// Calculating MC_W
 
-		frameByFrameResults = CalculateMCW(hands, ctrls, directory, 100, 30, frameByFrameResults)
+		frameByFrameResults = CalculateMCW(grasps, ctrls, directory, 100, 30, frameByFrameResults)
 
 		// Calculating Grasp Distance
 
-		frameByFrameResults = CalculateGraspDistance(hands, ctrls, directory, 10, 500, frameByFrameResults)
+		frameByFrameResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, frameByFrameResults)
 
 		// Convert object position to integer values
 

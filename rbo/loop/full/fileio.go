@@ -217,12 +217,15 @@ func WriteCsvFloatVector(filename string, data []float64) {
 
 func WriteCsvVector(filename string, data []string) {
 	// fmt.Println("Writing:", filename)
+	// fmt.Println("Data:", data)
 	file, err := os.Create(filename)
 	defer file.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 	w := csv.NewWriter(file)
+	defer w.Flush()
+
 	w.Write(data)
 }
 
@@ -234,5 +237,7 @@ func WriteCsvMatrix(filename string, data [][]string) {
 		log.Fatal(err)
 	}
 	w := csv.NewWriter(file)
+	defer w.Flush()
+
 	w.WriteAll(data)
 }

@@ -9,16 +9,16 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateDifferenceBehaviour(input, output string, hands, ctrls []*regexp.Regexp, prescriptive *regexp.Regexp, directory *string) {
+func CalculateDifferenceBehaviour(input, output string, hands, ctrls []*regexp.Regexp, directory *string) {
 	fmt.Println("Calculating difference behaviour")
 	files := ListAllFilesRecursivelyByFilename(*directory, input)
 
 	iterations := 0
 	for _, hand := range hands {
 		for _, ctrl := range ctrls {
-			rbohand2Files := Select(files, *hand)
-			rbohand2Files = Select(rbohand2Files, *ctrl)
-			iterations += len(rbohand2Files)
+			rbohandFiles := Select(files, *hand)
+			rbohandFiles = Select(rbohandFiles, *ctrl)
+			iterations += len(rbohandFiles)
 		}
 	}
 
@@ -26,14 +26,11 @@ func CalculateDifferenceBehaviour(input, output string, hands, ctrls []*regexp.R
 
 	for _, hand := range hands {
 		for _, ctrl := range ctrls {
-			rbohand2Grasps := Select(files, *hand)
-			rbohand2Grasps = Select(rbohand2Grasps, *ctrl)
-
-			rbohand2Prescriptives := Select(files, *prescriptive)
-			rbohand2Prescriptives = Select(rbohand2Prescriptives, *ctrl)
-			prescritiveData := ReadCSVToData(rbohand2Prescriptives[0])
-
-			for _, s := range rbohand2Grasps {
+			rbohandGrasps := Select(files, *hand)
+			rbohandGrasps = Select(rbohandGrasps, *ctrl)
+			for _, s := range rbohandGrasps {
+				prescritiveFilename := convertFilenameToPrescriptive(s)
+				prescritiveData := ReadCSVToData(prescritiveFilename)
 				outfile := strings.Replace(s, input, output, 1)
 				if _, err := os.Stat(outfile); os.IsNotExist(err) {
 					data := ReadCSVToData(s) // returns 2d-array of pose
@@ -65,4 +62,14 @@ func calculateDifferencePositionOnly(grasp, prescriptive Data) Data {
 		}
 	}
 	return r
+}
+
+func convertFilenameToPrescriptive(input string) (output string) {
+	directory := regexp.MustCompile("/(rbohand[-a-zA-Z0-9]+)/")
+	position := regexp.MustCompile("(-*[0-9]+.[0-9]+_-*[0-9]+.[0-9]+_-*[0-9]+.[0-9])")
+	object := regexp.MustCompile("(object[a-zA-Z]+)")
+	output = directory.ReplaceAllString(input, "/$1-prescriptive/")
+	output = position.ReplaceAllString(output, "0.0_0.0_0.0")
+	output = object.ReplaceAllString(output, "objectcylinder")
+	return
 }

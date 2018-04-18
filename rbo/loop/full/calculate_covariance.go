@@ -47,10 +47,7 @@ func CalculateCovarianceMatrices(input, output string, hands, ctrls []*regexp.Re
 					case MODE_FRAME_BY_FRAME:
 						covarianceMatrix = calculateCovarianceFrameByFrame(data, start, stop)
 					case MODE_SEGMENT:
-						fmt.Println("Segment")
 						covarianceMatrix = calculateCovarianceSegment(data, start, stop)
-						fmt.Println(len(covarianceMatrix))
-						fmt.Println(len(covarianceMatrix[0]))
 					case MODE_FULL:
 						covarianceMatrix = calculateCovarianceFull(data, start, stop)
 					default:
@@ -121,33 +118,40 @@ func calculateCovarianceSegment(data [][]float64, start, stop int) []string {
 	// data is pruned in ConvertSofaStatesSegment
 	indices := [][]int{{0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9}, {10, 11}}
 
-	fmt.Println("Data: ", len(data))
-	fmt.Println("Data[0]: ", len(data[0]))
-	fmt.Println("Indices: ", len(indices))
+	// fmt.Println("Data: ", len(data))
+	// fmt.Println("Data[0]: ", len(data[0]))
+	// fmt.Println("Indices: ", len(indices))
 
-	r := make([]string, 3*len(indices), 3*len(indices))
+	r := make([]string, 9*len(indices), 9*len(indices))
 	for i, v := range indices {
+		// fmt.Println(3*v[0]+0, 3*v[1]+0)
 		dix := getColumn(data, 3*v[0]+0)
 		djx := getColumn(data, 3*v[1]+0)
 		dix = dix[start:stop]
 		djx = djx[start:stop]
 
+		// fmt.Println(3*v[0]+1, 3*v[1]+1)
 		diy := getColumn(data, 3*v[0]+1)
 		djy := getColumn(data, 3*v[1]+1)
 		diy = diy[start:stop]
 		djy = djy[start:stop]
 
+		// fmt.Println(3*v[0]+2, 3*v[1]+2)
 		diz := getColumn(data, 3*v[0]+2)
 		djz := getColumn(data, 3*v[1]+2)
 		diz = diz[start:stop]
 		djz = djz[start:stop]
 
-		r[3*i] = fmt.Sprintf("%f", stat.Covariance(dix, djx, nil))
-		r[3*i+1] = fmt.Sprintf("%f", stat.Covariance(diy, djy, nil))
-		r[3*i+3] = fmt.Sprintf("%f", stat.Covariance(diz, djz, nil))
+		r[9*i+0] = fmt.Sprintf("%f", stat.Covariance(dix, djx, nil))
+		r[9*i+1] = fmt.Sprintf("%f", stat.Covariance(dix, djy, nil))
+		r[9*i+2] = fmt.Sprintf("%f", stat.Covariance(dix, djz, nil))
+		r[9*i+3] = fmt.Sprintf("%f", stat.Covariance(diy, djx, nil))
+		r[9*i+4] = fmt.Sprintf("%f", stat.Covariance(diy, djy, nil))
+		r[9*i+5] = fmt.Sprintf("%f", stat.Covariance(diy, djz, nil))
+		r[9*i+6] = fmt.Sprintf("%f", stat.Covariance(diz, djx, nil))
+		r[9*i+7] = fmt.Sprintf("%f", stat.Covariance(diz, djy, nil))
+		r[9*i+8] = fmt.Sprintf("%f", stat.Covariance(diz, djz, nil))
 	}
-	return r
-
 	return r
 }
 

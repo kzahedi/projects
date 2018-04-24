@@ -123,3 +123,15 @@ func getColumn(data [][]float64, col int) []float64 {
 	}
 	return r
 }
+
+func SelectFiles(files []string, hands, ctrls []*regexp.Regexp) []string {
+	var r []string
+	for _, hand := range hands {
+		for _, ctrl := range ctrls {
+			f := Select(files, *hand)
+			f = Select(f, *ctrl)
+			r = append(r, f...)
+		}
+	}
+	return r
+}

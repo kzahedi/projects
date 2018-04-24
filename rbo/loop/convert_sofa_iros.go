@@ -12,34 +12,22 @@ import (
 func ConvertSofaStatesIROS(input, output string, hands, ctrls []*regexp.Regexp, directory *string) {
 	fmt.Println("Converting sofa state files:", input)
 	files := ListAllFilesRecursivelyByFilename(*directory, input)
-	iterations := 0
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			rbohand2Files := Select(files, *hand)
-			rbohand2Files = Select(rbohand2Files, *ctrl)
-			iterations += len(rbohand2Files)
+
+	selectedFiles := SelectFiles(files, hands, ctrls)
+	bar := pb.StartNew(len(selectedFiles))
+
+	for _, s := range selectedFiles {
+		outfile := strings.Replace(s, "raw", "analysis", 1)
+		outfile = strings.Replace(outfile, input, output, 1)
+		if _, err := os.Stat(outfile); os.IsNotExist(err) {
+			data := ReadSofaSates(s) // returns 2d-array of pose
+			data = transformIntoWristFramePositionOnly(data)
+			CreateDir(outfile)
+			WritePositions(outfile, data)
 		}
+		bar.Increment()
 	}
 
-	bar := pb.StartNew(iterations)
-
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			rbohand2Files := Select(files, *hand)
-			rbohand2Files = Select(rbohand2Files, *ctrl)
-			for _, s := range rbohand2Files {
-				outfile := strings.Replace(s, "raw", "analysis", 1)
-				outfile = strings.Replace(outfile, input, output, 1)
-				if _, err := os.Stat(outfile); os.IsNotExist(err) {
-					data := ReadSofaSates(s) // returns 2d-array of pose
-					data = transformIntoWristFramePositionOnly(data)
-					CreateDir(outfile)
-					WritePositions(outfile, data)
-				}
-				bar.Increment()
-			}
-		}
-	}
 	bar.Finish()
 }
 

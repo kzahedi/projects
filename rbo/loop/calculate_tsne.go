@@ -23,7 +23,7 @@ func CalculateTSNE(input string, hand, controller *regexp.Regexp, directory *str
 			key := GetKey(v)
 			elem := results[key]
 			if elem.Successful {
-				fmt.Println("found selected")
+				// fmt.Println("found selected")
 				selected = append(selected, v)
 			}
 		}

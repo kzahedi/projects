@@ -13,33 +13,19 @@ func CalculateDifferenceBehaviour(input, output string, hands, ctrls []*regexp.R
 	fmt.Println("Calculating difference behaviour")
 	files := ListAllFilesRecursivelyByFilename(*directory, input)
 
-	iterations := 0
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			rbohandFiles := Select(files, *hand)
-			rbohandFiles = Select(rbohandFiles, *ctrl)
-			iterations += len(rbohandFiles)
-		}
-	}
+	selectedFiles := SelectFiles(files, hands, ctrls)
+	bar := pb.StartNew(len(selectedFiles))
 
-	bar := pb.StartNew(iterations)
-
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			rbohandGrasps := Select(files, *hand)
-			rbohandGrasps = Select(rbohandGrasps, *ctrl)
-			for _, s := range rbohandGrasps {
-				prescritiveFilename := convertFilenameToPrescriptive(s)
-				prescritiveData := ReadCSVToData(prescritiveFilename)
-				outfile := strings.Replace(s, input, output, 1)
-				if _, err := os.Stat(outfile); os.IsNotExist(err) {
-					data := ReadCSVToData(s) // returns 2d-array of pose
-					diff := calculateDifferencePositionOnly(data, prescritiveData)
-					WritePositions(outfile, diff)
-				}
-				bar.Increment()
-			}
+	for _, s := range selectedFiles {
+		prescritiveFilename := convertFilenameToPrescriptive(s)
+		prescritiveData := ReadCSVToData(prescritiveFilename)
+		outfile := strings.Replace(s, input, output, 1)
+		if _, err := os.Stat(outfile); os.IsNotExist(err) {
+			data := ReadCSVToData(s) // returns 2d-array of pose
+			diff := calculateDifferencePositionOnly(data, prescritiveData)
+			WritePositions(outfile, diff)
 		}
+		bar.Increment()
 	}
 	bar.Finish()
 }

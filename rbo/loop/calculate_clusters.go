@@ -51,7 +51,7 @@ func CalculateInteretingClusters(data Results, graspDistanceCutoff, percentage f
 	mcwDiff := maxMCW * percentage
 	gdDiff := maxGraspDistance * percentage
 
-	stupidMCW := minMCW + mcwDiff
+	stupidMCW := maxMCW - mcwDiff
 	intelligentMCW := maxMCW - mcwDiff
 
 	stupidGraspDistance := maxGraspDistance - gdDiff
@@ -68,7 +68,7 @@ func CalculateInteretingClusters(data Results, graspDistanceCutoff, percentage f
 			value.Stupid = false
 			value.Intelligent = false
 
-			if mcw < stupidMCW && gd > stupidGraspDistance {
+			if mcw > stupidMCW && gd > stupidGraspDistance {
 				value.Stupid = true
 				value.Intelligent = false
 				nrOfStupid++
@@ -83,7 +83,7 @@ func CalculateInteretingClusters(data Results, graspDistanceCutoff, percentage f
 		}
 	}
 	fmt.Println(fmt.Sprintf("Intelligent, MC > %.5f and Grasp Distance < %.5f", intelligentMCW, intelligentGraspDistance))
-	fmt.Println(fmt.Sprintf("Stupid,      MC < %.5f and Grasp Distance > %.5f", stupidMCW, stupidGraspDistance))
+	fmt.Println(fmt.Sprintf("Stupid,      MC > %.5f and Grasp Distance > %.5f", stupidMCW, stupidGraspDistance))
 
 	fmt.Println(fmt.Sprintf("Intelligent %d", nrOfIntelligent))
 	fmt.Println(fmt.Sprintf("Stupid      %d", nrOfStupid))

@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/kzahedi/utils"
 )
 
 func convert(data []string) []Pose {
@@ -78,31 +80,12 @@ func framesToStringSlice(trajectories []Trajectory) [][]string {
 
 func WritePositions(filename string, data Data) {
 	stringData := framesToStringSlice(data.Trajectories)
-	// fmt.Println(fmt.Sprintf("Writing: %s", filename))
-	file, err := os.Create(filename)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	writer.WriteAll(stringData)
+	utils.WriteCsv(filename, stringData, nil)
 }
 
 func ReadCSVToData(input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
-	// fmt.Println("Reading:", input)
-
-	file, _ := os.Open(input)
-	defer file.Close()
-
-	r := csv.NewReader(file)
-	records, err := r.ReadAll()
-	if err != nil {
-		log.Fatal(err)
-	}
+	records, _ := utils.ReadCsv(input)
 
 	data.NrOfDataPoints = len(records)
 	data.NrOfTrajectories = len(records[0]) / 3
@@ -112,12 +95,9 @@ func ReadCSVToData(input string) Data {
 	for trajectoryIndex := 0; trajectoryIndex < data.NrOfTrajectories; trajectoryIndex++ {
 		data.Trajectories[trajectoryIndex].Frame = make([]Pose, data.NrOfDataPoints, data.NrOfDataPoints)
 		for frameIndex := 0; frameIndex < data.NrOfDataPoints; frameIndex++ {
-			xs := records[frameIndex][trajectoryIndex*3+0]
-			ys := records[frameIndex][trajectoryIndex*3+1]
-			zs := records[frameIndex][trajectoryIndex*3+2]
-			x, _ := strconv.ParseFloat(xs, 64)
-			y, _ := strconv.ParseFloat(ys, 64)
-			z, _ := strconv.ParseFloat(zs, 64)
+			x := records[frameIndex][trajectoryIndex*3+0]
+			y := records[frameIndex][trajectoryIndex*3+1]
+			z := records[frameIndex][trajectoryIndex*3+2]
 			pose := CreatePose(x, y, z, 0.0, 0.0, 0.0, 1.0)
 			data.Trajectories[trajectoryIndex].Frame[frameIndex] = pose
 		}

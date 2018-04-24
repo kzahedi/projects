@@ -11,6 +11,7 @@ import (
 )
 
 func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int, results Results) Results {
+	fmt.Println("Calculating MC_W")
 	ctrlFilename := "control.states.csv"
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
@@ -18,49 +19,34 @@ func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins
 	handMin, handMax, handBins := generateFingerTipMinMaxBins(hands, ctrls, directory, wBins)
 	ctrlMin, ctrlMax, ctrlBins := generateControllerMinMaxBins(hands, ctrls, directory, wBins)
 
-	iterations := 0
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			rbohand2Files := Select(handFiles, *hand)
-			rbohand2Files = Select(rbohand2Files, *ctrl)
-			iterations += len(rbohand2Files)
-		}
+	selectedFiles := SelectFiles(handFiles, hands, ctrls)
+	bar := pb.StartNew(len(selectedFiles))
+
+	for _, s := range selectedFiles {
+		ftd := ReadCSVToFloat(s)
+		fingerTipData := extractFingerTipData(ftd)
+		discretisedFingerTipData := dh.Discretise(fingerTipData, handBins, handMin, handMax)
+		univariateFingerTipData := dh.MakeUnivariateRelabelled(discretisedFingerTipData, handBins)
+
+		c := strings.Replace(s, "analysis", "raw", -1)
+		c = strings.Replace(c, handFilename, ctrlFilename, -1)
+		ctd := ReadControlFile(c)
+		ctrlData := extractControllerData(ctd)
+		discretisedCtrlData := dh.Discretise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
+		univariateCtrlData := dh.MakeUnivariateRelabelled(discretisedCtrlData, ctrlBins)
+
+		w2w1a1 := mergeDataForMCW(univariateFingerTipData, univariateCtrlData)
+		pw2w1a1 := discrete.Emperical3D(w2w1a1)
+		mc_w := discrete.MorphologicalComputationW(pw2w1a1)
+
+		key := GetKey(s)
+
+		v := results[key]
+		v.MC_W = mc_w
+		results[key] = v
+		bar.Increment()
 	}
 
-	fmt.Println("Calculating MC_W")
-	bar := pb.StartNew(iterations)
-
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			behaviours := Select(handFiles, *hand)
-			behaviours = Select(behaviours, *ctrl)
-
-			for _, s := range behaviours {
-				ftd := ReadCSVToFloat(s)
-				fingerTipData := extractFingerTipData(ftd)
-				discretisedFingerTipData := dh.Discretise(fingerTipData, handBins, handMin, handMax)
-				univariateFingerTipData := dh.MakeUnivariateRelabelled(discretisedFingerTipData, handBins)
-
-				c := strings.Replace(s, "analysis", "raw", -1)
-				c = strings.Replace(c, handFilename, ctrlFilename, -1)
-				ctd := ReadControlFile(c)
-				ctrlData := extractControllerData(ctd)
-				discretisedCtrlData := dh.Discretise(ctrlData, ctrlBins, ctrlMin, ctrlMax)
-				univariateCtrlData := dh.MakeUnivariateRelabelled(discretisedCtrlData, ctrlBins)
-
-				w2w1a1 := mergeDataForMCW(univariateFingerTipData, univariateCtrlData)
-				pw2w1a1 := discrete.Emperical3D(w2w1a1)
-				mc_w := discrete.MorphologicalComputationW(pw2w1a1)
-
-				key := GetKey(s)
-
-				v := results[key]
-				v.MC_W = mc_w
-				results[key] = v
-				bar.Increment()
-			}
-		}
-	}
 	bar.Finish()
 
 	return results

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+
+	"github.com/kzahedi/utils"
 )
 
 func main() {
@@ -14,15 +16,35 @@ func main() {
 	segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
 	frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
 	percentage := flag.Float64("p", 0.15, "Cut-off percentage for intelligent and stupid")
-	maxGraspDistance := flag.Float64("mgd", 300.0, "Cut-off for grasp distance")
+	maxGraspDistance := flag.Float64("mgd", 250.0, "Cut-off for grasp distance")
+	minLiftHeight := flag.Float64("mlh", 50.0, "Min lifting height for successful grasps.")
+	trajectoryLength := flag.Int("t", 75, "The number of data points for covariance calculations.")
+	tsneIterations := flag.Int("tsne", 10000, "Number of iterations for t-SNE")
 	k := flag.Int("k", 10, "k-nearest neighbour after clustering")
 	test := flag.String("test", "", "Test")
 	flag.Parse()
 
 	if *test != "" {
-		data := ReadResults(*test)
-		data = CalculateInteretingClusters(data, *maxGraspDistance, *percentage, *k)
-		WriteResults("/Users/zahedi/Desktop/iros.results.csv", data)
+		header := []string{"a", "b", "c", "d"}
+		header2 := []string{"# a", "b", "c", "d"}
+		data := [][]string{{"1", "2", "3", "4"}, {"11", "12", "13", "14"}, {"21", "22", "23", "24"}, {"31", "32", "33", "34"}, {"41", "42", "43", "44"}}
+		utils.WriteCsv("/Users/zahedi/Desktop/test.1.csv", data, header)
+		utils.WriteCsv("/Users/zahedi/Desktop/test.2.csv", data, nil)
+		utils.WriteCsv("/Users/zahedi/Desktop/test.3.csv", data, header2)
+
+		d1, h1 := utils.ReadCsv("/Users/zahedi/Desktop/test.1.csv")
+		d2, h2 := utils.ReadCsv("/Users/zahedi/Desktop/test.2.csv")
+		d3, h3 := utils.ReadCsv("/Users/zahedi/Desktop/test.3.csv")
+
+		fmt.Println(d1)
+		fmt.Println(h1)
+
+		fmt.Println(d2)
+		fmt.Println(h2)
+
+		fmt.Println(d3)
+		fmt.Println(h3)
+
 		os.Exit(0)
 	}
 
@@ -51,10 +73,12 @@ func main() {
 	handSofaStates := "hand.sofastates.txt"
 	obstacleSofaStates := "obstacle.sofastates.txt"
 	obstacleSofaStatesCsv := "obstacle.sofastates.csv"
-	ConvertSofaStates(obstacleSofaStates, grasps, ctrls, directory, false)
-	ConvertSofaStates(handSofaStates, grasps, ctrls, directory, false)
-	ConvertSofaStates(obstacleSofaStates, prescritives, ctrls, directory, false)
-	ConvertSofaStates(handSofaStates, prescritives, ctrls, directory, false)
+
+	// these four liens are needed for grasp success calculations
+	ConvertSofaStatesPreprocessing(obstacleSofaStates, grasps, ctrls, directory, false)
+	ConvertSofaStatesPreprocessing(obstacleSofaStates, prescritives, ctrls, directory, false)
+	ConvertSofaStatesPreprocessing(handSofaStates, grasps, ctrls, directory, false)
+	ConvertSofaStatesPreprocessing(handSofaStates, prescritives, ctrls, directory, false)
 
 	////////////////////////////////////////////////////////////
 	// IROS Results
@@ -83,11 +107,11 @@ func main() {
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(irosDiffHandSofaStates, irosCovariance, grasps, ctrls, directory, 75, MODE_FULL)
+		CalculateCovarianceMatrices(irosDiffHandSofaStates, irosCovariance, grasps, ctrls, directory, *trajectoryLength, MODE_FULL)
 
 		// determine if successful or not
 
-		irosResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, 50.0, irosResults)
+		irosResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, *minLiftHeight, irosResults) // checked
 
 		// Calculating MC_W
 
@@ -107,7 +131,7 @@ func main() {
 
 		// Calculate t-SNE
 
-		irosResults = CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, 5000, false, irosResults)
+		irosResults = CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, irosResults)
 
 		// Calculate Clusters
 
@@ -141,20 +165,20 @@ func main() {
 		// convert SOFA files to CSV
 		// including preprocessing
 
-		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, grasps, ctrls, directory)
-		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, prescritives, ctrls, directory)
+		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, grasps, ctrls, directory)       // checked
+		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, prescritives, ctrls, directory) // checked
 
 		// calculate difference behaviour (grasp - prescriptive)
 
-		CalculateDifferenceBehaviour(segmentHandSofaStates, segmentDiffHandSofaStates, grasps, ctrls, directory)
+		CalculateDifferenceBehaviour(segmentHandSofaStates, segmentDiffHandSofaStates, grasps, ctrls, directory) // checked
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, grasps, ctrls, directory, 75, MODE_SEGMENT)
+		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, grasps, ctrls, directory, *trajectoryLength, MODE_SEGMENT) // checked
 
 		// determine if successful or not
 
-		segmentResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, 50.0, segmentResults)
+		segmentResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, *minLiftHeight, segmentResults) // checked
 
 		// Calculating MC_W
 
@@ -174,7 +198,7 @@ func main() {
 
 		// Calculate t-SNE
 
-		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, 5000, false, segmentResults)
+		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, segmentResults)
 
 		// Calculate Clusters
 
@@ -217,11 +241,11 @@ func main() {
 
 		// calculate co-variance matrices
 
-		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, grasps, ctrls, directory, 75, MODE_FRAME_BY_FRAME)
+		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, grasps, ctrls, directory, *trajectoryLength, MODE_FRAME_BY_FRAME)
 
 		// determine if successful or not
 
-		frameByFrameResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, 50.0, frameByFrameResults)
+		frameByFrameResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, *minLiftHeight, frameByFrameResults) // checked
 
 		// Calculating MC_W
 
@@ -241,7 +265,7 @@ func main() {
 
 		// Calculate t-SNE
 
-		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, 5000, false, frameByFrameResults)
+		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, frameByFrameResults)
 
 		// Calculate Clusters
 

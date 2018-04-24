@@ -10,43 +10,28 @@ import (
 )
 
 func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, lastNSteps, cutOff int, results Results) Results {
+	fmt.Println("Calculating Grasp Distances")
 	objectFilename := "obstacle.sofastates.csv"
 	handFilename := "hand.sofastates.csv"
 	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
 	fcutOff := float64(cutOff)
 
-	iterations := 0
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			rbohand2Files := Select(handFiles, *hand)
-			rbohand2Files = Select(rbohand2Files, *ctrl)
-			iterations += len(rbohand2Files)
-		}
-	}
+	selectedFiles := SelectFiles(handFiles, hands, ctrls)
+	bar := pb.StartNew(len(selectedFiles))
 
-	fmt.Println("Calculating Grasp Distances")
-	bar := pb.StartNew(iterations)
+	for _, s := range selectedFiles {
+		handData := ReadCSVToFloat(s)
+		handData = extractMiddleFingerRoot(handData)
+		objF := strings.Replace(s, handFilename, objectFilename, -1)
+		objectData := ReadCSVToFloat(objF)
 
-	for _, hand := range hands {
-		for _, ctrl := range ctrls {
-			behaviours := Select(handFiles, *hand)
-			behaviours = Select(behaviours, *ctrl)
+		gd := calculateGD(handData, objectData, lastNSteps)
 
-			for _, s := range behaviours {
-				handData := ReadCSVToFloat(s)
-				handData = extractMiddleFingerRoot(handData)
-				objF := strings.Replace(s, handFilename, objectFilename, -1)
-				objectData := ReadCSVToFloat(objF)
-
-				gd := calculateGD(handData, objectData, lastNSteps)
-
-				key := GetKey(s)
-				v := results[key]
-				v.GraspDistance = math.Min(gd, fcutOff)
-				results[key] = v
-				bar.Increment()
-			}
-		}
+		key := GetKey(s)
+		v := results[key]
+		v.GraspDistance = math.Min(gd, fcutOff)
+		results[key] = v
+		bar.Increment()
 	}
 
 	bar.Finish()

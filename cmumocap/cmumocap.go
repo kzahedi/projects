@@ -59,9 +59,7 @@ func main() {
 	var selectedLabels []string
 	switch *labelsSetPtr {
 	case 0:
-		selectedLabels = []string{"C7", "T10",
-			"LANK", "LBHD", "LEBL", "LFHD", "LFWT", "LHEE", "LKNE", "LSHO", "LWRA",
-			"RANK", "RBHD", "REBL", "RFHD", "RFWT", "RHEE", "RKNE", "RSHO", "RWRA"}
+		selectedLabels = []string{"T10", "C7", "LFWT", "LKNE", "LANK", "LSHO", "LELB", "LWRA", "RFWT", "RKNE", "RANK", "RSHO", "RELB", "RWRA", "LFHD", "LBHD", "RBHD", "RFHD", "LHEE", "RHEE"}
 	}
 
 	////////////////////////////////////////////////////////////
@@ -178,73 +176,39 @@ func main() {
 
 	exportWFile(wFile, df, foundLabels)
 	exportAFile(aFile, df, foundLabels)
-	os.Exit(0)
 
-	df = coordinateTransformation(df, prefix+(*centreCoordinateFramePtr))
+	////////////////////////////////////////////////////////////
+	// Calculating MC_W
+	////////////////////////////////////////////////////////////
+
+	df = coordinateTransformation(df, *centreCoordinateFramePtr)
 	df = normaliseDataFrame(df)
 
-	nrOfLabels := df.Ncol() / 4
+	foundLabelsWithoutCentre := remove(*centreCoordinateFramePtr, foundLabels)
 
-	if nrOfLabels == 0 {
-		nrOfLabels = len(labels)
-	}
+	w := extractW(df, foundLabelsWithoutCentre)
+	a := extractA(df, foundLabelsWithoutCentre)
 
-	fmt.Println("Number of labels:", nrOfLabels)
+	nrOfLabels := len(foundLabelsWithoutCentre)
+	n, _ := df.Dims()
 
-	w := make([][]float64, df.Nrow(), df.Nrow())
-	for r := 0; r < df.Nrow(); r++ {
-		w[r] = make([]float64, nrOfLabels*3, nrOfLabels*3)
-	}
-
-	a := make([][]float64, df.Nrow(), df.Nrow())
-	for r := 0; r < df.Nrow(); r++ {
-		a[r] = make([]float64, nrOfLabels, nrOfLabels)
-	}
-
-	var wHeader []string
-
-	colIndex := 0
-	for _, name := range df.Names() {
-		isX := strings.HasSuffix(name, ".X") == true
-		isY := strings.HasSuffix(name, ".Y") == true
-		isZ := strings.HasSuffix(name, ".Z") == true
-		if isX || isY || isZ {
-			wHeader = append(wHeader, name)
-			for row := 0; row < df.Nrow(); row++ {
-				w[row][colIndex] = df.Elem(row, colIndex).Float()
-			}
-			colIndex++
-		}
-	}
-
-	var aHeader []string
-	colIndex = 0
-	for _, name := range df.Names() {
-		isA := strings.HasSuffix(name, ".A") == true
-		if isA {
-			aHeader = append(aHeader, name)
-			for row := 0; row < df.Nrow(); row++ {
-				a[row][colIndex] = df.Elem(row, colIndex).Float()
-			}
-			colIndex++
-		}
-	}
-
-	w2w1a1 := make([][]float64, df.Nrow()-1, df.Nrow()-1)
-	for i := 0; i < df.Nrow()-1; i++ {
+	w2w1a1 := make([][]float64, n-1, n-1)
+	for i := 0; i < n-1; i++ {
 		w2w1a1[i] = make([]float64, nrOfLabels*7, nrOfLabels*7) // x', y', z', x, y, z, a
 	}
 
 	// w2,w1
-	for row := 0; row < df.Nrow()-1; row++ {
+	for row := 0; row < n-1; row++ {
 		for col := 0; col < nrOfLabels*3; col++ {
 			w2w1a1[row][col] = w[row+1][col]            // w2: x', y', z'
 			w2w1a1[row][nrOfLabels*3+col] = w[row][col] // w1: x, y, z
 		}
 	}
 
+	fmt.Println(len(a), " ", len(a[0]))
+
 	// a1
-	for row := 0; row < df.Nrow()-1; row++ {
+	for row := 0; row < n-1; row++ {
 		for col := 0; col < nrOfLabels; col++ {
 			w2w1a1[row][nrOfLabels*6+col] = a[row][col] // a1: a
 		}
@@ -279,30 +243,8 @@ func main() {
 	file.WriteString(fmt.Sprintf("MI_w: %f\n", mcw))
 	file.WriteString(fmt.Sprintf("Number of data points: %d\n", len(data.Points[0])))
 
-	fmt.Println("Result written to", csvFile)
+	fmt.Println("Point-wise data written to", csvFile)
 	utils.WriteCsvFloatArray(csvFile, mcw, nil)
-
-	fmt.Println("Actuator states written to", wFile)
-	utils.WriteCsvFloatMatrix(aFile, a, aHeader)
-
-	//	p, err := plot.New()
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	p.Title.Text = "Trial " + sStr + "_" + tStr
-	//	// p.X.Label.Text = "X"
-	//	// p.Y.Label.Text = "Y"
-	//
-	//	err = plotutil.AddLinePoints(p, "MC_W", makePoints(mcw))
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	// Save the plot to a PNG file.
-	//	if err := p.Save(600, 400, "points.png"); err != nil {
-	//		panic(err)
-	//	}
 }
 
 func makePoints(data []float64) plotter.XYs {
@@ -452,11 +394,11 @@ func coordinateTransformation(df dataframe.DataFrame, centre string) dataframe.D
 }
 
 func normaliseDataFrame(df dataframe.DataFrame) dataframe.DataFrame {
+	fmt.Println("Normalising data")
 	names := df.Names()
 
 	var r dataframe.DataFrame
 
-	fmt.Println("Normalising data")
 	bar := pb.StartNew(len(names))
 	for i, name := range names {
 		s := df.Col(name)
@@ -520,12 +462,43 @@ func prefix(n int) string {
 }
 
 func exportWFile(filename string, df dataframe.DataFrame, labels []string) {
+	w := extractW(df, labels)
+
+	var header []string
+
+	for _, l := range labels {
+		header = append(header, fmt.Sprintf("%s.X", l))
+		header = append(header, fmt.Sprintf("%s.Y", l))
+		header = append(header, fmt.Sprintf("%s.Z", l))
+	}
+
+	fmt.Println("Writing world states to", filename)
+	utils.WriteCsvFloatMatrix(filename, w, header)
+}
+
+func exportAFile(filename string, df dataframe.DataFrame, labels []string) {
+	a := extractA(df, labels)
+
+	var header []string
+
+	for _, l := range labels {
+		header = append(header, fmt.Sprintf("%s.X", l))
+		header = append(header, fmt.Sprintf("%s.Y", l))
+		header = append(header, fmt.Sprintf("%s.Z", l))
+	}
+
+	fmt.Println("Writing actuator states to", filename)
+	utils.WriteCsvFloatMatrix(filename, a, header)
+}
+
+func extractW(df dataframe.DataFrame, labels []string) [][]float64 {
 	nrOfLabels := len(labels)
 
-	w := make([][]float64, 3*nrOfLabels, 3*nrOfLabels)
-	n := len(df.Col(fmt.Sprintf("%s.X", labels[0])).Float())
-	for r := 0; r < nrOfLabels*3; r++ {
-		w[r] = make([]float64, n, n)
+	n, _ := df.Dims()
+	w := make([][]float64, n, n)
+
+	for r := 0; r < n; r++ {
+		w[r] = make([]float64, 3*nrOfLabels, 3*nrOfLabels)
 	}
 
 	var header []string
@@ -544,23 +517,23 @@ func exportWFile(filename string, df dataframe.DataFrame, labels []string) {
 		zData := df.Col(zName).Float()
 
 		for r := 0; r < n; r++ {
-			w[i*3+0][r] = xData[r]
-			w[i*3+1][r] = yData[r]
-			w[i*3+2][r] = zData[r]
+			w[r][i*3+0] = xData[r]
+			w[r][i*3+1] = yData[r]
+			w[r][i*3+2] = zData[r]
 		}
 	}
 
-	fmt.Println("Writing world states to", filename)
-	utils.WriteCsvFloatMatrix(filename, w, header)
+	return w
 }
 
-func exportAFile(filename string, df dataframe.DataFrame, labels []string) {
+func extractA(df dataframe.DataFrame, labels []string) [][]float64 {
 	nrOfLabels := len(labels)
 
-	a := make([][]float64, nrOfLabels, nrOfLabels)
-	n := len(df.Col(fmt.Sprintf("%s.A", labels[0])).Float())
-	for r := 0; r < nrOfLabels; r++ {
-		a[r] = make([]float64, n, n)
+	n, _ := df.Dims()
+	a := make([][]float64, n, n)
+
+	for r := 0; r < n; r++ {
+		a[r] = make([]float64, nrOfLabels, nrOfLabels)
 	}
 
 	var header []string
@@ -572,10 +545,19 @@ func exportAFile(filename string, df dataframe.DataFrame, labels []string) {
 		data := df.Col(name).Float()
 
 		for r := 0; r < n; r++ {
-			a[i][r] = data[r]
+			a[r][i] = data[r]
 		}
 	}
 
-	fmt.Println("Writing actuator states to", filename)
-	utils.WriteCsvFloatMatrix(filename, a, header)
+	return a
+}
+
+func remove(elem string, list []string) []string {
+	var r []string
+	for _, l := range list {
+		if l != elem {
+			r = append(r, l)
+		}
+	}
+	return r
 }

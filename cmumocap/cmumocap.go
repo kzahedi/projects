@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"io"
@@ -15,62 +14,70 @@ import (
 	"github.com/kzahedi/goc3d"
 	"github.com/kzahedi/goent/continuous"
 	"github.com/kzahedi/goent/continuous/state"
+	"github.com/kzahedi/utils"
+
+	"gonum.org/v1/plot/plotter"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 // labels="C7,T10,LFWT,LKNE,LANK,LSHO,LWRA,RFWT,RKNE,RANK,RSHO,RWRA,LFHD,LBHD,RBHD,RFHD,LHEE,RHEE"
 func main() {
+
 	subjectPtr := flag.Int("s", 38, "subject id")
 	trialPtr := flag.Int("t", 4, "trial id")
 	labelsSetPtr := flag.Int("l", 0, "labels")
 	centreCoordinateFramePtr := flag.String("L", "T10", "labels")
-	minPtr := flag.Int("n", 100, "minimum number of data points") // default was originally 1000
 	printLabelsPtr := flag.Bool("v", false, "print all the labels")
-	exportToCsv := flag.Bool("csv", false, "export to csv")
 	useJerk := flag.Bool("j", false, "use jerk instead of curvature")
-
 	flag.Parse()
 
 	sStr := prefix(*subjectPtr)
 	tStr := prefix(*trialPtr)
-	c3dFile := fmt.Sprintf("%s_%s.c3d", sStr, tStr)
-	c3dUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s", sStr, c3dFile)
+	directory := fmt.Sprintf("%s_%s", sStr, tStr)
+	c3dFile := fmt.Sprintf("%s/%s.c3d", directory, directory)
+	c3dUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.c3d", sStr, directory)
 
-	mpgFile := fmt.Sprintf("%s_%s.mpg", sStr, tStr)
-	mpgUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s", sStr, mpgFile)
+	mpgFile := fmt.Sprintf("%s/%s.mpg", directory, directory)
+	mpgUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.mpg", sStr, directory)
 
-	aviFile := fmt.Sprintf("%s_%s.avi", sStr, tStr)
-	aviUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s", sStr, aviFile)
+	aviFile := fmt.Sprintf("%s/%s.avi", directory, directory)
+	aviUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.avi", sStr, directory)
 
-	headerFile := fmt.Sprintf("%s_%s_meta.c3d", sStr, tStr)
-	resultFile := fmt.Sprintf("%s_%s_results.txt", sStr, tStr)
-	csvFile := fmt.Sprintf("%s_%s_results.csv", sStr, tStr)
+	headerFile := fmt.Sprintf("%s/%s_meta.c3d", directory, directory)
+	resultFile := fmt.Sprintf("%s/%s_results.txt", directory, directory)
+	csvFile := fmt.Sprintf("%s/%s_results.csv", directory, directory)
+	wFile := fmt.Sprintf("%s/%s_w.csv", directory, directory)
+	aFile := fmt.Sprintf("%s/%s_a.csv", directory, directory)
+
+	utils.CreateDirectory(directory, false)
 
 	downloadFile(c3dFile, c3dUrl)
 	downloadFile(mpgFile, mpgUrl)
 	downloadFile(aviFile, aviUrl)
 
-	var labelSet string
+	var selectedLabels []string
 	switch *labelsSetPtr {
 	case 0:
-		labelSet = "C7,T10,LFWT,LKNE,LANK,LSHO,LWRA,RFWT,RKNE,RANK,RSHO,RWRA,LFHD,LBHD,RBHD,RFHD,LHEE,RHEE"
+		selectedLabels = []string{"C7", "T10",
+			"LANK", "LBHD", "LEBL", "LFHD", "LFWT", "LHEE", "LKNE", "LSHO", "LWRA",
+			"RANK", "RBHD", "REBL", "RFHD", "RFWT", "RHEE", "RKNE", "RSHO", "RWRA"}
 	}
 
-	selectedLabels := strings.Split(labelSet, ",")
+	////////////////////////////////////////////////////////////
+	// Read C3D File
+	////////////////////////////////////////////////////////////
 	header, info, data := goc3d.ReadC3D(c3dFile)
 	fmt.Println(header)
 
 	fmt.Println(fmt.Sprintf("Writing header information to %s\n", headerFile))
-	headerFD, _ := os.Create(headerFile)
-	defer headerFD.Close()
-	headerFD.WriteString(fmt.Sprintf("%s\n", header))
+	file, _ := os.Create(headerFile)
+	defer file.Close()
+	file.WriteString(fmt.Sprintf("%s\n", header))
 
-	if len(data.Points[0]) < *minPtr {
-		fmt.Println(fmt.Sprintf("skipping because not enough data points (%d<%d)", len(data.Points[0]), *minPtr))
-		os.Exit(0)
-	}
-	var labels []string
+	////////////////////////////////////////////////////////////
+	// Extract prefix
+	////////////////////////////////////////////////////////////
 
 	prefix := ""
 
@@ -80,9 +87,14 @@ func main() {
 		}
 	}
 
+	fmt.Println(fmt.Sprintf("Removing prefix \"%s\"", prefix))
+
+	var labels []string
 	for _, p := range info.Parameters {
 		if p.Name == "LABELS" {
 			for _, s := range p.StringData {
+				s = strings.Replace(s, prefix, "", -1)
+				s = strings.Trim(s, " ")
 				labels = append(labels, s)
 			}
 		}
@@ -91,6 +103,8 @@ func main() {
 	for _, p := range info.Parameters {
 		if p.Name == "LABELS2" {
 			for _, s := range p.StringData {
+				s = strings.Replace(s, prefix, "", -1)
+				s = strings.Trim(s, " ")
 				labels = append(labels, s)
 			}
 		}
@@ -103,35 +117,41 @@ func main() {
 		os.Exit(0)
 	}
 
-	for i := range selectedLabels {
-		selectedLabels[i] = prefix + selectedLabels[i]
+	var foundLabels []string
+
+	for _, s := range selectedLabels {
+		found := false
+		for _, t := range labels {
+			if s == t {
+				foundLabels = append(foundLabels, s)
+				found = true
+			}
+		}
+		if found == false {
+			fmt.Println(fmt.Sprintf("The label \"%s\" was not found", s))
+		}
 	}
+
+	if len(foundLabels) == 0 {
+		fmt.Printf("The specified labels were not found in the data")
+		os.Exit(-1)
+	}
+
+	// from here on, we will work with foundLabels, which is the
+	// intersection of selectedLabels and labels
 
 	var df dataframe.DataFrame
 
-	if len(selectedLabels) > 0 { // check if all given labels are found
-		var notfound []string
-		for _, s := range selectedLabels {
-			if contains(labels, s) == false {
-				notfound = append(notfound, s)
-			}
-		}
-		if len(notfound) > 0 {
-			fmt.Println("Labels not found:")
-			for _, l := range notfound {
-				fmt.Println(" ", l)
-			}
-			os.Exit(0)
-		}
-	}
-
 	fmt.Println("Extracting data")
-	bar := pb.StartNew(len(selectedLabels))
+	bar := pb.StartNew(len(foundLabels))
 	var indices []int
 
-	for i, l := range labels {
-		if len(selectedLabels) > 0 && contains(selectedLabels, l) == true {
-			indices = append(indices, i)
+	// get the indices from the data
+	for _, s := range foundLabels {
+		for i, t := range labels {
+			if s == t {
+				indices = append(indices, i)
+			}
 		}
 	}
 
@@ -152,48 +172,16 @@ func main() {
 	}
 	bar.Finish()
 
+	////////////////////////////////////////////////////////////
+	// Export W, A File
+	////////////////////////////////////////////////////////////
+
+	exportWFile(wFile, df, foundLabels)
+	exportAFile(aFile, df, foundLabels)
+	os.Exit(0)
+
 	df = coordinateTransformation(df, prefix+(*centreCoordinateFramePtr))
-
-	// Not sure what is the functionality:
-	if *exportToCsv == true {
-		csvFilename := strings.Replace(c3dFile, "c3d", "csv", -1)
-		csvFilename = strings.Replace(csvFilename, "csv", "c3d", 1) // first one must be c3d not csv
-		fmt.Println("Exporting to", csvFilename)
-		file, _ := os.Create(csvFilename)
-		defer file.Close()
-		df.WriteCSV(file)
-		os.Exit(0)
-	}
-
 	df = normaliseDataFrame(df)
-
-	m := make([][]float64, df.Nrow(), df.Nrow())
-	for r := 0; r < df.Nrow(); r++ {
-		m[r] = make([]float64, df.Ncol(), df.Ncol())
-	}
-
-	colIndex := 0
-	for _, name := range df.Names() {
-		isX := strings.HasSuffix(name, ".X") == true
-		isY := strings.HasSuffix(name, ".Y") == true
-		isZ := strings.HasSuffix(name, ".Z") == true
-		if isX || isY || isZ {
-			for row := 0; row < df.Nrow(); row++ {
-				m[row][colIndex] = df.Elem(row, colIndex).Float()
-			}
-			colIndex++
-		}
-	}
-
-	for _, name := range df.Names() {
-		isA := strings.HasSuffix(name, ".A") == true
-		if isA {
-			for row := 0; row < df.Nrow(); row++ {
-				m[row][colIndex] = df.Elem(row, colIndex).Float()
-			}
-			colIndex++
-		}
-	}
 
 	nrOfLabels := df.Ncol() / 4
 
@@ -203,22 +191,62 @@ func main() {
 
 	fmt.Println("Number of labels:", nrOfLabels)
 
+	w := make([][]float64, df.Nrow(), df.Nrow())
+	for r := 0; r < df.Nrow(); r++ {
+		w[r] = make([]float64, nrOfLabels*3, nrOfLabels*3)
+	}
+
+	a := make([][]float64, df.Nrow(), df.Nrow())
+	for r := 0; r < df.Nrow(); r++ {
+		a[r] = make([]float64, nrOfLabels, nrOfLabels)
+	}
+
+	var wHeader []string
+
+	colIndex := 0
+	for _, name := range df.Names() {
+		isX := strings.HasSuffix(name, ".X") == true
+		isY := strings.HasSuffix(name, ".Y") == true
+		isZ := strings.HasSuffix(name, ".Z") == true
+		if isX || isY || isZ {
+			wHeader = append(wHeader, name)
+			for row := 0; row < df.Nrow(); row++ {
+				w[row][colIndex] = df.Elem(row, colIndex).Float()
+			}
+			colIndex++
+		}
+	}
+
+	var aHeader []string
+	colIndex = 0
+	for _, name := range df.Names() {
+		isA := strings.HasSuffix(name, ".A") == true
+		if isA {
+			aHeader = append(aHeader, name)
+			for row := 0; row < df.Nrow(); row++ {
+				a[row][colIndex] = df.Elem(row, colIndex).Float()
+			}
+			colIndex++
+		}
+	}
+
 	w2w1a1 := make([][]float64, df.Nrow()-1, df.Nrow()-1)
 	for i := 0; i < df.Nrow()-1; i++ {
 		w2w1a1[i] = make([]float64, nrOfLabels*7, nrOfLabels*7) // x', y', z', x, y, z, a
 	}
 
-	// w2
+	// w2,w1
 	for row := 0; row < df.Nrow()-1; row++ {
-		for col := 0; col < nrOfLabels*3; col++ { // x, y, z
-			w2w1a1[row][col] = m[row+1][col]
+		for col := 0; col < nrOfLabels*3; col++ {
+			w2w1a1[row][col] = w[row+1][col]            // w2: x', y', z'
+			w2w1a1[row][nrOfLabels*3+col] = w[row][col] // w1: x, y, z
 		}
 	}
 
-	// w1, a1
+	// a1
 	for row := 0; row < df.Nrow()-1; row++ {
-		for col := 0; col < nrOfLabels*4; col++ { // x, y, z, a
-			w2w1a1[row][nrOfLabels*3+col] = m[row][col]
+		for col := 0; col < nrOfLabels; col++ {
+			w2w1a1[row][nrOfLabels*6+col] = a[row][col] // a1: a
 		}
 	}
 
@@ -245,18 +273,46 @@ func main() {
 
 	// fmt.Println(mcw)
 	fmt.Println("Result written to", resultFile)
-	file, _ := os.Create(resultFile)
+	file, _ = os.Create(resultFile)
 	defer file.Close()
 	file.WriteString(fmt.Sprintf("MI_w: %f\n", mcwc))
 	file.WriteString(fmt.Sprintf("MI_w: %f\n", mcw))
 	file.WriteString(fmt.Sprintf("Number of data points: %d\n", len(data.Points[0])))
 
 	fmt.Println("Result written to", csvFile)
-	file, _ = os.Create(csvFile)
-	defer file.Close()
-	w := csv.NewWriter(file)
-	defer w.Flush()
-	w.Write(stringArray(mcw, header))
+	utils.WriteCsvFloatArray(csvFile, mcw, nil)
+
+	fmt.Println("Actuator states written to", wFile)
+	utils.WriteCsvFloatMatrix(aFile, a, aHeader)
+
+	//	p, err := plot.New()
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	p.Title.Text = "Trial " + sStr + "_" + tStr
+	//	// p.X.Label.Text = "X"
+	//	// p.Y.Label.Text = "Y"
+	//
+	//	err = plotutil.AddLinePoints(p, "MC_W", makePoints(mcw))
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	// Save the plot to a PNG file.
+	//	if err := p.Save(600, 400, "points.png"); err != nil {
+	//		panic(err)
+	//	}
+}
+
+func makePoints(data []float64) plotter.XYs {
+	n := len(data)
+	pts := make(plotter.XYs, n)
+	for i := range pts {
+		pts[i].X = float64(i)
+		pts[i].Y = data[i]
+	}
+	return pts
 }
 
 func stringArray(d []float64, header goc3d.C3DHeader) []string {
@@ -425,23 +481,9 @@ func normaliseDataFrame(df dataframe.DataFrame) dataframe.DataFrame {
 	return r
 }
 
-func contains(lst []string, l string) bool {
-	for _, s := range lst {
-		if strings.Compare(strings.Trim(s, " "), strings.Trim(l, " ")) == 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func exists(name string) bool {
-	_, err := os.Stat(name)
-	return !os.IsNotExist(err)
-}
-
 func downloadFile(filename, url string) (err error) {
 
-	if exists(filename) == true {
+	if utils.FileExists(filename) == true {
 		return nil
 	}
 
@@ -475,4 +517,65 @@ func prefix(n int) string {
 		return fmt.Sprintf("0%d", n)
 	}
 	return fmt.Sprintf("%d", n)
+}
+
+func exportWFile(filename string, df dataframe.DataFrame, labels []string) {
+	nrOfLabels := len(labels)
+
+	w := make([][]float64, 3*nrOfLabels, 3*nrOfLabels)
+	n := len(df.Col(fmt.Sprintf("%s.X", labels[0])).Float())
+	for r := 0; r < nrOfLabels*3; r++ {
+		w[r] = make([]float64, n, n)
+	}
+
+	var header []string
+
+	for i, label := range labels {
+		xName := fmt.Sprintf("%s.X", label)
+		yName := fmt.Sprintf("%s.Y", label)
+		zName := fmt.Sprintf("%s.Z", label)
+
+		header = append(header, xName)
+		header = append(header, yName)
+		header = append(header, zName)
+
+		xData := df.Col(xName).Float()
+		yData := df.Col(yName).Float()
+		zData := df.Col(zName).Float()
+
+		for r := 0; r < n; r++ {
+			w[i*3+0][r] = xData[r]
+			w[i*3+1][r] = yData[r]
+			w[i*3+2][r] = zData[r]
+		}
+	}
+
+	fmt.Println("Writing world states to", filename)
+	utils.WriteCsvFloatMatrix(filename, w, header)
+}
+
+func exportAFile(filename string, df dataframe.DataFrame, labels []string) {
+	nrOfLabels := len(labels)
+
+	a := make([][]float64, nrOfLabels, nrOfLabels)
+	n := len(df.Col(fmt.Sprintf("%s.A", labels[0])).Float())
+	for r := 0; r < nrOfLabels; r++ {
+		a[r] = make([]float64, n, n)
+	}
+
+	var header []string
+
+	for i, label := range labels {
+		name := fmt.Sprintf("%s.A", label)
+		header = append(header, name)
+
+		data := df.Col(name).Float()
+
+		for r := 0; r < n; r++ {
+			a[i][r] = data[r]
+		}
+	}
+
+	fmt.Println("Writing actuator states to", filename)
+	utils.WriteCsvFloatMatrix(filename, a, header)
 }

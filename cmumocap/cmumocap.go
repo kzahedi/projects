@@ -42,10 +42,10 @@ func main() {
 		selectedLabels = []string{"T10", "LFWT", "LKNE", "LANK", "LHEE", "RFWT", "RKNE", "RANK", "RHEE"} // T10 is for the transformation
 		labelSetLabel = "legs"
 	case 2: // left leg only
-		selectedLabels = []string{"T10", "LFWT", "LKNE", "LANK"} // T10 is for the transformation
+		selectedLabels = []string{"T10", "LFWT", "LKNE", "LANK", "LHEE"} // T10 is for the transformation
 		labelSetLabel = "left_leg"
 	case 3: // left leg only
-		selectedLabels = []string{"T10", "RFWT", "RKNE", "RANK"} // T10 is for the transformation
+		selectedLabels = []string{"T10", "RFWT", "RKNE", "RANK", "RHEE"} // T10 is for the transformation
 		labelSetLabel = "right_leg"
 	}
 
@@ -78,7 +78,7 @@ func main() {
 	// Read C3D File
 	////////////////////////////////////////////////////////////
 	header, info, data := goc3d.ReadC3D(c3dFile)
-	fmt.Println(header)
+	// fmt.Println(header)
 
 	fmt.Println(fmt.Sprintf("Writing header information to %s\n", headerFile))
 	file, _ := os.Create(headerFile)

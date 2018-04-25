@@ -13,3 +13,5 @@ cmumocap/.DS_Store
 *.mov
 *.mp4
 *.c3d
+*.sh
+cmumocap/cmumocap

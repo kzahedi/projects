@@ -32,35 +32,47 @@ func main() {
 	useJerk := flag.Bool("j", false, "use jerk instead of curvature")
 	flag.Parse()
 
+	var labelSetLabel string
+	var selectedLabels []string
+	switch *labelsSetPtr {
+	case 0: // all labels
+		selectedLabels = []string{"T10", "C7", "LFWT", "LKNE", "LANK", "LSHO", "LELB", "LWRA", "RFWT", "RKNE", "RANK", "RSHO", "RELB", "RWRA", "LFHD", "LBHD", "RBHD", "RFHD", "LHEE", "RHEE"}
+		labelSetLabel = "full"
+	case 1: // legs only
+		selectedLabels = []string{"T10", "LFWT", "LKNE", "LANK", "LHEE", "RFWT", "RKNE", "RANK", "RHEE"} // T10 is for the transformation
+		labelSetLabel = "legs"
+	case 2: // left leg only
+		selectedLabels = []string{"T10", "LFWT", "LKNE", "LANK"} // T10 is for the transformation
+		labelSetLabel = "left_leg"
+	case 3: // left leg only
+		selectedLabels = []string{"T10", "RFWT", "RKNE", "RANK"} // T10 is for the transformation
+		labelSetLabel = "right_leg"
+	}
+
 	sStr := prefix(*subjectPtr)
 	tStr := prefix(*trialPtr)
-	directory := fmt.Sprintf("%s_%s", sStr, tStr)
-	c3dFile := fmt.Sprintf("%s/%s.c3d", directory, directory)
-	c3dUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.c3d", sStr, directory)
+	directory := fmt.Sprintf("%s_%s_%s", sStr, tStr, labelSetLabel)
+	id := fmt.Sprintf("%s_%s", sStr, tStr)
+	c3dFile := fmt.Sprintf("%s/%s.c3d", directory, id)
+	c3dUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.c3d", sStr, id)
 
-	mpgFile := fmt.Sprintf("%s/%s.mpg", directory, directory)
-	mpgUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.mpg", sStr, directory)
+	mpgFile := fmt.Sprintf("%s/%s.mpg", directory, id)
+	mpgUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.mpg", sStr, id)
 
-	aviFile := fmt.Sprintf("%s/%s.avi", directory, directory)
-	aviUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.avi", sStr, directory)
+	aviFile := fmt.Sprintf("%s/%s.avi", directory, id)
+	aviUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.avi", sStr, id)
 
-	headerFile := fmt.Sprintf("%s/%s_meta.c3d", directory, directory)
-	resultFile := fmt.Sprintf("%s/%s_results.txt", directory, directory)
-	csvFile := fmt.Sprintf("%s/%s_results.csv", directory, directory)
-	wFile := fmt.Sprintf("%s/%s_w.csv", directory, directory)
-	aFile := fmt.Sprintf("%s/%s_a.csv", directory, directory)
+	headerFile := fmt.Sprintf("%s/%s_meta.c3d", directory, id)
+	resultFile := fmt.Sprintf("%s/%s_results.txt", directory, id)
+	csvFile := fmt.Sprintf("%s/%s_results.csv", directory, id)
+	wFile := fmt.Sprintf("%s/%s_w.csv", directory, id)
+	aFile := fmt.Sprintf("%s/%s_a.csv", directory, id)
 
 	utils.CreateDirectory(directory, false)
 
 	downloadFile(c3dFile, c3dUrl)
 	downloadFile(mpgFile, mpgUrl)
 	downloadFile(aviFile, aviUrl)
-
-	var selectedLabels []string
-	switch *labelsSetPtr {
-	case 0:
-		selectedLabels = []string{"T10", "C7", "LFWT", "LKNE", "LANK", "LSHO", "LELB", "LWRA", "RFWT", "RKNE", "RANK", "RSHO", "RELB", "RWRA", "LFHD", "LBHD", "RBHD", "RFHD", "LHEE", "RHEE"}
-	}
 
 	////////////////////////////////////////////////////////////
 	// Read C3D File
@@ -242,6 +254,11 @@ func main() {
 	file.WriteString(fmt.Sprintf("MI_w: %f\n", mcwc))
 	file.WriteString(fmt.Sprintf("MI_w: %f\n", mcw))
 	file.WriteString(fmt.Sprintf("Number of data points: %d\n", len(data.Points[0])))
+
+	// fullMCW := make([]float64, header.LastFrame, header.LastFrame)
+	// for i, v := range mcw {
+	// fullMCW[header.FirstFrame+i] = v
+	// }
 
 	fmt.Println("Point-wise data written to", csvFile)
 	utils.WriteCsvFloatArray(csvFile, mcw, nil)

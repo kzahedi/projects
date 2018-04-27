@@ -70,21 +70,21 @@ func extractFingerTipData(data [][]float64) [][]float64 {
 	for row := 0; row < len(data); row++ {
 		r[row] = make([]float64, 4*3, 4*3)
 
-		r[row][0] = data[row][4*3+0] // index finger x
-		r[row][1] = data[row][4*3+1] // index finger y
-		r[row][2] = data[row][4*3+2] // index finger z
+		r[row][0] = data[row][5*3+0] // index finger x
+		r[row][1] = data[row][5*3+1] // index finger y
+		r[row][2] = data[row][5*3+2] // index finger z
 
-		r[row][3] = data[row][9*3+0] // index finger x
-		r[row][4] = data[row][9*3+1] // index finger y
-		r[row][5] = data[row][9*3+2] // index finger z
+		r[row][3] = data[row][10*3+0] // index finger x
+		r[row][4] = data[row][10*3+1] // index finger y
+		r[row][5] = data[row][10*3+2] // index finger z
 
-		r[row][6] = data[row][14*3+0] // index finger x
-		r[row][7] = data[row][14*3+1] // index finger y
-		r[row][8] = data[row][14*3+2] // index finger z
+		r[row][6] = data[row][15*3+0] // index finger x
+		r[row][7] = data[row][15*3+1] // index finger y
+		r[row][8] = data[row][15*3+2] // index finger z
 
-		r[row][9] = data[row][19*3+0]  // index finger x
-		r[row][10] = data[row][19*3+1] // index finger y
-		r[row][11] = data[row][19*3+2] // index finger z
+		r[row][9] = data[row][20*3+0]  // index finger x
+		r[row][10] = data[row][20*3+1] // index finger y
+		r[row][11] = data[row][20*3+2] // index finger z
 	}
 
 	return r

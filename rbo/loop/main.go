@@ -115,11 +115,11 @@ func main() {
 
 		// Calculating MC_W
 
-		irosResults = CalculateMCW(grasps, ctrls, directory, 100, 30, irosResults)
+		irosResults = CalculateMCW(grasps, ctrls, directory, 100, 30, irosResults) // checked
 
 		// Calculating Grasp Distance
 
-		irosResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, irosResults)
+		irosResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, irosResults) // checked
 
 		// Convert object position to integer values
 
@@ -182,11 +182,11 @@ func main() {
 
 		// Calculating MC_W
 
-		segmentResults = CalculateMCW(grasps, ctrls, directory, 100, 30, segmentResults)
+		segmentResults = CalculateMCW(grasps, ctrls, directory, 100, 30, segmentResults) // checked
 
 		// Calculating Grasp Distance
 
-		segmentResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, segmentResults)
+		segmentResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, segmentResults) // checked
 
 		// Convert object position to integer values
 
@@ -249,11 +249,11 @@ func main() {
 
 		// Calculating MC_W
 
-		frameByFrameResults = CalculateMCW(grasps, ctrls, directory, 100, 30, frameByFrameResults)
+		frameByFrameResults = CalculateMCW(grasps, ctrls, directory, 100, 30, frameByFrameResults) // checked
 
 		// Calculating Grasp Distance
 
-		frameByFrameResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, frameByFrameResults)
+		frameByFrameResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, frameByFrameResults) // checked
 
 		// Convert object position to integer values
 

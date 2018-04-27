@@ -123,11 +123,11 @@ func main() {
 
 		// Convert object position to integer values
 
-		irosResults = ExtractObjectPosition(irosResults)
+		irosResults = ExtractObjectPosition(irosResults) // checked
 
 		// Convert object type to integer values
 
-		irosResults = ExtractObjectType(irosResults)
+		irosResults = ExtractObjectType(irosResults) // checked
 
 		// Calculate t-SNE
 
@@ -135,7 +135,7 @@ func main() {
 
 		// Calculate Clusters
 
-		irosResults = CalculateInteretingClusters(irosResults, *maxGraspDistance, *percentage, *k)
+		irosResults = CalculateInterestingClusters(irosResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/iros.cluster.info.txt")
 
 		WriteResults("/Users/zahedi/Desktop/iros.results.csv", irosResults)
 
@@ -190,11 +190,11 @@ func main() {
 
 		// Convert object position to integer values
 
-		segmentResults = ExtractObjectPosition(segmentResults)
+		segmentResults = ExtractObjectPosition(segmentResults) // checked
 
 		// Convert object type to integer values
 
-		segmentResults = ExtractObjectType(segmentResults)
+		segmentResults = ExtractObjectType(segmentResults) // checked
 
 		// Calculate t-SNE
 
@@ -202,7 +202,7 @@ func main() {
 
 		// Calculate Clusters
 
-		segmentResults = CalculateInteretingClusters(segmentResults, *maxGraspDistance, *percentage, *k)
+		segmentResults = CalculateInterestingClusters(segmentResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/segment.cluster.info.txt")
 
 		WriteResults("/Users/zahedi/Desktop/segment.results.csv", segmentResults)
 
@@ -257,11 +257,11 @@ func main() {
 
 		// Convert object position to integer values
 
-		frameByFrameResults = ExtractObjectPosition(frameByFrameResults)
+		frameByFrameResults = ExtractObjectPosition(frameByFrameResults) // checked
 
 		// Convert object type to integer values
 
-		frameByFrameResults = ExtractObjectType(frameByFrameResults)
+		frameByFrameResults = ExtractObjectType(frameByFrameResults) // checked
 
 		// Calculate t-SNE
 
@@ -269,7 +269,7 @@ func main() {
 
 		// Calculate Clusters
 
-		frameByFrameResults = CalculateInteretingClusters(frameByFrameResults, *maxGraspDistance, *percentage, *k)
+		frameByFrameResults = CalculateInterestingClusters(frameByFrameResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/frameByFrame.cluster.info.txt")
 
 		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", frameByFrameResults)
 

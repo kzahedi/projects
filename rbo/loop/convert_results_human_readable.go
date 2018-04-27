@@ -25,7 +25,7 @@ func getStringsIROS(label string, indices [][]int, data [][]float64) [][]string 
 		yDstIndex := dst*3 + 1
 		zDstIndex := dst*3 + 2
 
-		fmt.Println(fmt.Sprintf("Indices [%d %d %d] [%d %d %d]", xSrcIndex, ySrcIndex, zSrcIndex, xDstIndex, yDstIndex, zDstIndex))
+		// fmt.Println(fmt.Sprintf("Indices [%d %d %d] [%d %d %d]", xSrcIndex, ySrcIndex, zSrcIndex, xDstIndex, yDstIndex, zDstIndex))
 
 		s := make([]string, 19, 19)
 

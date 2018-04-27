@@ -40,8 +40,6 @@ func CalculateTSNE(input string, hand, controller *regexp.Regexp, directory *str
 
 	tsne := tsne4go.New(data, nil)
 
-	// fmt.Println(tsne)
-
 	bar := pb.StartNew(iterations)
 
 	for i := 0; i < iterations; i++ {

@@ -50,31 +50,30 @@ func CalculateCovarianceMatrices(input, output string, hands, ctrls []*regexp.Re
 
 func calculateCovarianceFrameByFrame(data [][]float64, start, stop int) []string {
 	indices := [][]int{
-		{28, 29}, // thumb and palm
-		{27, 28},
-		{26, 27},
-		{25, 26},
-		{24, 29},
-		{23, 24},
-		{22, 23},
-		{21, 22},
-		{20, 21},
-		{18, 19}, // pinky finger
-		{17, 18},
-		{16, 17},
-		{15, 16},
-		{13, 14}, // ring finger
-		{12, 13},
-		{11, 12},
-		{10, 11},
-		{8, 9}, // middle finger
-		{7, 8},
-		{6, 7},
-		{5, 6},
-		{4, 5}, // thumb
-		{3, 4},
+		{0, 1}, // thumb
+		{1, 2},
 		{2, 3},
-		{1, 2}}
+		{3, 4},
+		{5, 6}, // palm
+		{6, 7},
+		{7, 8},
+		{8, 9},
+		{10, 11}, // pinky
+		{11, 12},
+		{12, 13},
+		{13, 14},
+		{15, 16}, // ring
+		{16, 17},
+		{17, 18},
+		{18, 19},
+		{20, 21}, // middle
+		{21, 22},
+		{22, 23},
+		{23, 24},
+		{25, 26}, // index
+		{26, 27},
+		{27, 28},
+		{28, 29}}
 
 	r := make([]string, 9*len(indices), 9*len(indices))
 	for i, v := range indices {

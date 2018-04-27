@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"math"
+	"os"
 	"sort"
 )
 
-func CalculateInteretingClusters(data Results, graspDistanceCutoff, percentage float64, k int) Results {
+func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage float64, k int, output string) Results {
 
 	maxMCW := -1.0
 	minMCW := -1.0
@@ -82,13 +83,22 @@ func CalculateInteretingClusters(data Results, graspDistanceCutoff, percentage f
 			data[key] = value
 		}
 	}
-	fmt.Println(fmt.Sprintf("Intelligent, MC > %.5f and Grasp Distance < %.5f", intelligentMCW, intelligentGraspDistance))
-	fmt.Println(fmt.Sprintf("Stupid,      MC > %.5f and Grasp Distance > %.5f", stupidMCW, stupidGraspDistance))
+	s := ""
+	s = s + fmt.Sprintf("Intelligent, MC > %.5f and Grasp Distance < %.5f\n", intelligentMCW, intelligentGraspDistance)
+	s = s + fmt.Sprintf("Stupid,      MC > %.5f and Grasp Distance > %.5f\n", stupidMCW, stupidGraspDistance)
+	s = s + fmt.Sprintf("Intelligent %d\n", nrOfIntelligent)
+	s = s + fmt.Sprintf("Stupid      %d\n", nrOfStupid)
+	s = s + fmt.Sprintf("None        %d\n", nrOfNone)
+	s = s + fmt.Sprintf("Sum         %d\n", nrOfIntelligent+nrOfStupid+nrOfNone)
+	fmt.Println(s)
 
-	fmt.Println(fmt.Sprintf("Intelligent %d", nrOfIntelligent))
-	fmt.Println(fmt.Sprintf("Stupid      %d", nrOfStupid))
-	fmt.Println(fmt.Sprintf("None        %d", nrOfNone))
-	fmt.Println(fmt.Sprintf("Sum         %d", nrOfIntelligent+nrOfStupid+nrOfNone))
+	f, err := os.Create(output)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	defer f.Sync()
+	f.WriteString(s)
 
 	intelligent := SelectIntelligent(data)
 	stupid := SelectStupid(data)

@@ -13,10 +13,10 @@ func getStdValueFrameByFrame(x int, data [][]float64) float64 {
 func getStringsFrameByFrame(label string, indices []int, data [][]float64) [][]string {
 	var r [][]string
 
-	for _, v := range indices {
+	for i, v := range indices {
 		s := make([]string, 19, 19)
 
-		s[0] = fmt.Sprintf("%s Frame %d vs. Frame %d", label, v, v+1)
+		s[0] = fmt.Sprintf("%s Frame %d vs. Frame %d", label, i, i+1)
 		s[1] = fmt.Sprintf("%.3f", getMeanValueFrameByFrame(9*v+0, data))
 		s[2] = fmt.Sprintf("%.3f", getStdValueFrameByFrame(9*v+0, data))
 		s[3] = fmt.Sprintf("%.3f", getMeanValueFrameByFrame(9*v+1, data))

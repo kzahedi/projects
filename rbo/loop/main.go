@@ -135,7 +135,7 @@ func main() {
 
 		// Calculate Clusters
 
-		irosResults = CalculateInterestingClusters(irosResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/iros.cluster.info.txt")
+		irosResults = CalculateInterestingClusters(irosResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/iros.cluster.info.txt") // checked
 
 		WriteResults("/Users/zahedi/Desktop/iros.results.csv", irosResults)
 
@@ -198,18 +198,18 @@ func main() {
 
 		// Calculate t-SNE
 
-		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, segmentResults)
+		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, segmentResults) // checked
 
 		// Calculate Clusters
 
-		segmentResults = CalculateInterestingClusters(segmentResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/segment.cluster.info.txt")
+		segmentResults = CalculateInterestingClusters(segmentResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/segment.cluster.info.txt") // checked
 
 		WriteResults("/Users/zahedi/Desktop/segment.results.csv", segmentResults)
 
 		// WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
 
-		AnalyseIntelligent(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.intelligent.csv")
-		AnalyseStupid(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.stupid.csv")
+		AnalyseIntelligent(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.intelligent.csv") // checked
+		AnalyseStupid(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.stupid.csv")           // checked
 
 		ConvertSegmentMatrixResults("/Users/zahedi/Desktop/segment.intelligent.csv")
 		ConvertSegmentMatrixResults("/Users/zahedi/Desktop/segment.stupid.csv")
@@ -269,11 +269,15 @@ func main() {
 
 		// Calculate Clusters
 
-		frameByFrameResults = CalculateInterestingClusters(frameByFrameResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/frameByFrame.cluster.info.txt")
+		frameByFrameResults = CalculateInterestingClusters(frameByFrameResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/frameByFrame.cluster.info.txt") // checked
 
 		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", frameByFrameResults)
 
 		AnalyseIntelligent(frameByFrameResults, *directory, frameByFrameCovariance, "/Users/zahedi/Desktop/frameByFrame.intelligent.csv")
 		AnalyseStupid(frameByFrameResults, *directory, frameByFrameCovariance, "/Users/zahedi/Desktop/frameByFrame.stupid.csv")
+
+		ConvertFrameByFrameMatrixResults("/Users/zahedi/Desktop/frameByFrame.intelligent.csv")
+		ConvertFrameByFrameMatrixResults("/Users/zahedi/Desktop/frameByFrame.stupid.csv")
+
 	}
 }

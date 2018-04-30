@@ -32,25 +32,13 @@ func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage 
 				maxGraspDistance = gd
 			}
 
-			if maxMCW < mcw {
-				maxMCW = mcw
-			}
-
-			if minMCW > mcw {
-				minMCW = mcw
-			}
-
-			if minGraspDistance > gd {
-				minGraspDistance = gd
-			}
-			if maxGraspDistance < gd {
-				maxGraspDistance = gd
-			}
+			setMinMax(mcw, &minMCW, &maxMCW)
+			setMinMax(gd, &minGraspDistance, &maxGraspDistance)
 		}
 	}
 
-	mcwDiff := maxMCW * percentage
-	gdDiff := maxGraspDistance * percentage
+	mcwDiff := (maxMCW - minMCW) * percentage
+	gdDiff := (maxGraspDistance - minGraspDistance) * percentage
 
 	stupidMCW := maxMCW - mcwDiff
 	intelligentMCW := maxMCW - mcwDiff
@@ -61,6 +49,7 @@ func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage 
 	nrOfIntelligent := 0
 	nrOfStupid := 0
 	nrOfNone := 0
+
 	for key, value := range data {
 		if value.ClusteredByTSE {
 			mcw := value.MC_W
@@ -71,10 +60,8 @@ func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage 
 
 			if mcw > stupidMCW && gd > stupidGraspDistance {
 				value.Stupid = true
-				value.Intelligent = false
 				nrOfStupid++
 			} else if mcw > intelligentMCW && gd < intelligentGraspDistance {
-				value.Stupid = false
 				value.Intelligent = true
 				nrOfIntelligent++
 			} else {
@@ -124,7 +111,11 @@ func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage 
 	return data
 }
 
-func getMeaningfulCluster(data Results, k int) Results {
+func getMeaningfulCluster(data Results, k int) Results { // checked
+
+	n := int(math.Min(float64(k), float64(len(data)-1)))
+
+	// for each: get the distance to the kNN
 	for key1, value1 := range data {
 		distances := make([]float64, len(data), len(data))
 
@@ -139,11 +130,12 @@ func getMeaningfulCluster(data Results, k int) Results {
 		sort.Slice(distances, func(a, b int) bool {
 			return distances[a] < distances[b]
 		})
-		value1.Distance = distances[k]
+		value1.Distance = distances[n]
 		value1.SelectedForAnalysis = true // will be set false below
 		data[key1] = value1
 	}
 
+	// the center is the key with the smallest distance to its kNN
 	for key1, value1 := range data {
 		for _, value2 := range data {
 			if value1.Distance > value2.Distance {
@@ -156,13 +148,16 @@ func getMeaningfulCluster(data Results, k int) Results {
 	// var centerKey string
 	var center Result
 
+	// get the center
 	for _, value := range data {
 		if value.SelectedForAnalysis == true {
 			// centerKey = key
 			center = value
+			break
 		}
 	}
 
+	// select the kNNs from the center
 	for key, value := range data {
 		dx := center.PosX - value.PosX
 		dy := center.PosY - value.PosY
@@ -196,4 +191,14 @@ func SelectStupid(data Results) Results {
 		}
 	}
 	return r
+}
+
+func setMinMax(value float64, min, max *float64) {
+	if *max < value {
+		*max = value
+	}
+
+	if *min > value {
+		*min = value
+	}
 }

@@ -3,10 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"regexp"
-
-	"github.com/kzahedi/utils"
 )
 
 func main() {
@@ -21,32 +18,7 @@ func main() {
 	trajectoryLength := flag.Int("t", 75, "The number of data points for covariance calculations.")
 	tsneIterations := flag.Int("tsne", 10000, "Number of iterations for t-SNE")
 	k := flag.Int("k", 10, "k-nearest neighbour after clustering")
-	test := flag.String("test", "", "Test")
 	flag.Parse()
-
-	if *test != "" {
-		header := []string{"a", "b", "c", "d"}
-		header2 := []string{"# a", "b", "c", "d"}
-		data := [][]string{{"1", "2", "3", "4"}, {"11", "12", "13", "14"}, {"21", "22", "23", "24"}, {"31", "32", "33", "34"}, {"41", "42", "43", "44"}}
-		utils.WriteCsv("/Users/zahedi/Desktop/test.1.csv", data, header)
-		utils.WriteCsv("/Users/zahedi/Desktop/test.2.csv", data, nil)
-		utils.WriteCsv("/Users/zahedi/Desktop/test.3.csv", data, header2)
-
-		d1, h1 := utils.ReadCsv("/Users/zahedi/Desktop/test.1.csv")
-		d2, h2 := utils.ReadCsv("/Users/zahedi/Desktop/test.2.csv")
-		d3, h3 := utils.ReadCsv("/Users/zahedi/Desktop/test.3.csv")
-
-		fmt.Println(d1)
-		fmt.Println(h1)
-
-		fmt.Println(d2)
-		fmt.Println(h2)
-
-		fmt.Println(d3)
-		fmt.Println(h3)
-
-		os.Exit(0)
-	}
 
 	////////////////////////////////////////////////////////////
 	// define regexp patterns
@@ -131,7 +103,8 @@ func main() {
 
 		// Calculate t-SNE
 
-		irosResults = CalculateTSNE("iros.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, irosResults)
+		// irosResults = CalculateTSNE("iros.covariance.csv", []*regexp.Regexp{rbohand2}, ctrls, directory, *tsneIterations, false, irosResults)
+		irosResults = CalculateTSNE("iros.covariance.csv", grasps, ctrls, directory, *tsneIterations, false, irosResults)
 
 		// Calculate Clusters
 
@@ -198,7 +171,8 @@ func main() {
 
 		// Calculate t-SNE
 
-		segmentResults = CalculateTSNE("segment.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, segmentResults) // checked
+		// segmentResults = CalculateTSNE("segment.covariance.csv", []*regexp.Regexp{rbohand2}, ctrls, directory, *tsneIterations, false, segmentResults) // checked
+		segmentResults = CalculateTSNE("segment.covariance.csv", grasps, ctrls, directory, *tsneIterations, false, segmentResults) // checked
 
 		// Calculate Clusters
 
@@ -265,7 +239,8 @@ func main() {
 
 		// Calculate t-SNE
 
-		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", rbohand2, controller0, directory, *tsneIterations, false, frameByFrameResults)
+		// frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", []*regexp.Regexp{rbohand2}, ctrls, directory, *tsneIterations, false, frameByFrameResults)
+		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", grasps, ctrls, directory, *tsneIterations, false, frameByFrameResults)
 
 		// Calculate Clusters
 

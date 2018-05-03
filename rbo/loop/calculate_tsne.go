@@ -8,12 +8,11 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateTSNE(input string, hand, controller *regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results) Results {
+func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results) Results {
 	fmt.Println("Calculating TSNE")
 	files := ListAllFilesRecursivelyByFilename(*directory, input)
 
-	covariances := Select(files, *hand)
-	covariances = Select(covariances, *controller)
+	covariances := SelectFiles(files, hands, ctrls)
 
 	var selected []string
 	if successfulOnly == false {

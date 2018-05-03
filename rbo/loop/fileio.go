@@ -85,7 +85,7 @@ func WritePositions(filename string, data Data) {
 
 func ReadCSVToData(input string) Data {
 	data := Data{Trajectories: nil, NrOfTrajectories: 0, NrOfDataPoints: 0}
-	records, _ := utils.ReadCsv(input)
+	records, _ := utils.ReadFloatCsv(input)
 
 	data.NrOfDataPoints = len(records)
 	data.NrOfTrajectories = len(records[0]) / 3

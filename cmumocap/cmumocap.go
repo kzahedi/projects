@@ -105,6 +105,7 @@ func main() {
 			for _, s := range p.StringData {
 				s = strings.Replace(s, prefix, "", -1)
 				s = strings.Trim(s, " ")
+				s = strings.Trim(s, "\t")
 				labels = append(labels, s)
 			}
 		}
@@ -115,6 +116,7 @@ func main() {
 			for _, s := range p.StringData {
 				s = strings.Replace(s, prefix, "", -1)
 				s = strings.Trim(s, " ")
+				s = strings.Trim(s, "\t")
 				labels = append(labels, s)
 			}
 		}
@@ -122,7 +124,7 @@ func main() {
 
 	if *printLabelsPtr == true {
 		for _, l := range labels {
-			fmt.Println(l)
+			fmt.Println(fmt.Sprintf("\"%s\"", l))
 		}
 		os.Exit(0)
 	}
@@ -165,14 +167,14 @@ func main() {
 		}
 	}
 
-	for _, i := range indices {
+	for n, i := range indices {
 		l := labels[i]
 		ls, ds := getData(i, l, data, *useJerk)
 		for j := range ls {
 			d := dataframe.New(
 				series.New(ds[j], series.Float, ls[j]),
 			)
-			if i == 0 && j == 0 {
+			if (n == 0) && (j == 0) {
 				df = d
 			} else {
 				df = df.CBind(d)
@@ -217,8 +219,6 @@ func main() {
 		}
 	}
 
-	fmt.Println(len(a), " ", len(a[0]))
-
 	// a1
 	for row := 0; row < n-1; row++ {
 		for col := 0; col < nrOfLabels; col++ {
@@ -261,6 +261,7 @@ func main() {
 	// }
 
 	fmt.Println("Point-wise data written to", csvFile)
+	// utils.WriteCsvFloatArray(csvFile, matchDataLength(mcw, header), nil)
 	utils.WriteCsvFloatArray(csvFile, mcw, nil)
 }
 
@@ -274,16 +275,16 @@ func makePoints(data []float64) plotter.XYs {
 	return pts
 }
 
-func stringArray(d []float64, header goc3d.C3DHeader) []string {
-	var s []string
+func matchDataLength(d []float64, header goc3d.C3DHeader) []float64 {
+	var s []float64
 	for i := 0; i < header.FirstFrame-1; i++ {
-		s = append(s, "0.0")
+		s = append(s, 0.0)
 	}
 	for _, v := range d {
-		s = append(s, fmt.Sprintf("%.3f", v))
+		s = append(s, v)
 	}
 	for len(s) < header.LastFrame {
-		s = append(s, "0.0")
+		s = append(s, 0.0)
 	}
 	return s
 }

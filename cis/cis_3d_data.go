@@ -1,5 +1,7 @@
 package main
 
+## this program works on the motion capturing data
+
 import (
 	"flag"
 	"fmt"

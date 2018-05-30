@@ -52,7 +52,7 @@ func main() {
 		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
 		convertSofaStates := ConvertSofaStatesSegment
 		convertMatrixResults := ConvertSegmentMatrixResults
-		convertAnalysisResults := ConvertIROSAnalysisResults
+		convertAnalysisResults := ConvertSegmentAnalysisResults
 		// convertAnalysisResults := ConvertSegmentAnalysisResults
 		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
 	}
@@ -124,6 +124,7 @@ func doIt(directory, outputDir, prefix string,
 	intelligentHumanFile := fmt.Sprintf("%s.intelligent.human.csv", prefix)
 	stupidHumanFile := fmt.Sprintf("%s.stupid.human.csv", prefix)
 	analysisFile := fmt.Sprintf("%s.analysis.txt", prefix)
+	analysisRawFile := fmt.Sprintf("%s.analysis.raw.txt", prefix)
 	tsneFile := fmt.Sprintf("%s.tsne.results.txt", prefix)
 
 	if utils.FileExists(fmt.Sprintf("%s/%s", outputDir, tsneFile)) == true {
@@ -187,6 +188,8 @@ func doIt(directory, outputDir, prefix string,
 	convertMatrixResults(outputDir, stupidFile, stupidHumanFile)
 
 	analysis := AnalyseData(intelligent, stupid, stabilFactor)
+
+	WriteAnalysis(outputDir, analysisRawFile, analysis)
 
 	convertAnalysisResults(outputDir, analysisFile, analysis)
 }

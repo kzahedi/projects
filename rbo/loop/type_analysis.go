@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+)
 
 type AnalysisValue struct {
 	Mean              float64
@@ -27,4 +32,26 @@ func CreateAnalysis(index int, imean, istd float64, istabil bool, smean, sstd fl
 	stupid := AnalysisValue{Mean: smean, StandardDeviation: sstd, Stabil: sstabil}
 	return Analysis{Index: index, Intelligent: intelligent, Stupid: stupid,
 		GoodMC: goodMC, BadMC: badMC, UseChange: useChange, Change: change}
+}
+
+func WriteAnalysis(dir, filename string, analysis []Analysis) {
+	file, err := os.Create(fmt.Sprintf("%s/%s", dir, filename))
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	w := bufio.NewWriter(file)
+
+	s := "# Index, Intelligent.Mean, Intelligent.StandardDeviation, Intelligent.Stabil, Stupid.Mean, Stupid.StandardDeviation, Stupid.Stabil, Good MC, Bad MC, Use Change, Change"
+
+	w.WriteString(s)
+
+	for _, a := range analysis {
+		s = fmt.Sprintf("\n%d,%f,%f,%t,%f,%f,%t,%t,%t,%t,%f", a.Index,
+			a.Intelligent.Mean, a.Intelligent.StandardDeviation, a.Intelligent.Stabil,
+			a.Stupid.Mean, a.Stupid.StandardDeviation, a.Stupid.Stabil,
+			a.GoodMC, a.BadMC, a.UseChange, a.Change)
+		w.WriteString(s)
+		w.Flush()
+	}
 }

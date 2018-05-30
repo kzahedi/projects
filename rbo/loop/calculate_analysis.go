@@ -1,5 +1,7 @@
 package main
 
+import "math"
+
 func AnalyseData(intelligent, stupid [][]float64, factor float64) []Analysis {
 	var analysis []Analysis
 	for i := range intelligent[0] {
@@ -11,8 +13,8 @@ func AnalyseData(intelligent, stupid [][]float64, factor float64) []Analysis {
 	}
 
 	for i, a := range analysis {
-		a.Intelligent.Stabil = (a.Intelligent.Mean > factor*a.Intelligent.StandardDeviation)
-		a.Stupid.Stabil = (a.Stupid.Mean > factor*a.Stupid.StandardDeviation)
+		a.Intelligent.Stabil = (math.Abs(a.Intelligent.Mean) > factor*a.Intelligent.StandardDeviation)
+		a.Stupid.Stabil = (math.Abs(a.Stupid.Mean) > factor*a.Stupid.StandardDeviation)
 		analysis[i] = a
 	}
 

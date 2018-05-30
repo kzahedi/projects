@@ -70,7 +70,6 @@ func main() {
 		fmt.Println("Please choose a method")
 		os.Exit(0)
 	}
-
 }
 
 func doIt(directory, outputDir, prefix string,

@@ -6,13 +6,18 @@ import (
 	"os"
 
 	"github.com/kzahedi/goent/continuous"
-	"github.com/kzahedi/goent/continuous/state"
+	cstate "github.com/kzahedi/goent/continuous/state"
+	"github.com/kzahedi/goent/dh"
+	"github.com/kzahedi/goent/discrete"
+	dstate "github.com/kzahedi/goent/discrete/state"
 	"github.com/kzahedi/utils"
 )
 
 func main() {
 
 	prefix := flag.String("p", "ca", "prefix")
+	discrete := flag.Bool("d", false, "discrete")
+	bins := flag.Int("b", 100, "bins")
 	help := flag.Bool("h", false, "help")
 	flag.Parse()
 
@@ -44,8 +49,45 @@ func main() {
 
 	wSel := utils.GetFloatColumns(wRaw, indices)
 
-	wNormalised := continuous.Normalise(wSel)
-	aNormalised := continuous.Normalise(aRaw)
+	if *discrete == true {
+		computeDiscrete(wSel, aRaw, *bins, *prefix)
+	} else {
+		computeContinuous(wSel, aRaw, *prefix)
+	}
+}
+
+func computeDiscrete(w, a [][]float64, bins int, prefix string) {
+
+	wmin, wmax := dh.GetMinMax(w)
+	amin, amax := dh.GetMinMax(a)
+
+	b := make([]int, len(w[0]), len(w[0]))
+	for i := range b {
+		b[i] = bins
+	}
+
+	wD := dh.Discretise(w, b, wmin, wmax)
+	aD := dh.Discretise(a, b, amin, amax)
+
+	W := dh.MakeUnivariateRelabelled(wD, b)
+	A := dh.MakeUnivariateRelabelled(aD, b)
+
+	w2w1a1 := makeDataInt(W, A)
+
+	pw2w1a1 := discrete.Emperical3D(w2w1a1)
+
+	mcw := discrete.MorphologicalComputationW(pw2w1a1)
+	mcw_pw := dstate.MorphologicalComputationW(w2w1a1)
+
+	fmt.Println(fmt.Sprintf("MC_W %f", mcw))
+
+	output := fmt.Sprintf("%s_mcw_discrete.csv", prefix)
+	utils.WriteCsvFloatArray(output, mcw_pw, nil)
+}
+
+func computeContinuous(w, a [][]float64, prefix string) {
+	wNormalised := continuous.Normalise(w)
+	aNormalised := continuous.Normalise(a)
 
 	w2w1a1 := makeData(wNormalised, aNormalised)
 
@@ -62,11 +104,11 @@ func main() {
 	}
 
 	mcw := continuous.MorphologicalComputationW(w2w1a1, w2Indices, w1Indices, a1Indices, 30, true)
-	mcw_pw := state.MorphologicalComputationW(w2w1a1, w2Indices, w1Indices, a1Indices, 30, true)
+	mcw_pw := cstate.MorphologicalComputationW(w2w1a1, w2Indices, w1Indices, a1Indices, 30, true)
 
 	fmt.Println(fmt.Sprintf("MC_W %f", mcw))
 
-	output := fmt.Sprintf("%s_mcw.csv", *prefix)
+	output := fmt.Sprintf("%s_mcw_cont.csv", prefix)
 	utils.WriteCsvFloatArray(output, mcw_pw, nil)
 }
 
@@ -88,6 +130,13 @@ func makeData(w, a [][]float64) [][]float64 {
 			s[2*nW+ai] = a[row][ai]
 		}
 		r = append(r, s)
+	}
+	return r
+}
+
+func makeDataInt(w, a []int) (r [][]int) {
+	for row := 0; row < len(w)-1; row++ {
+		r = append(r, []int{w[row+1], w[row], a[row]})
 	}
 	return r
 }

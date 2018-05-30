@@ -221,3 +221,18 @@ func WriteCsvMatrix(filename string, data [][]string) {
 
 	w.WriteAll(data)
 }
+
+func WriteStrings(filename string, data []string) {
+	// fmt.Println("Writing:", filename)
+	file, err := os.Create(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	w := bufio.NewWriter(file)
+	defer w.Flush()
+
+	for _, d := range data {
+		w.WriteString(d)
+	}
+}

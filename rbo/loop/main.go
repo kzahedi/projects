@@ -15,6 +15,7 @@ func main() {
 	percentage := flag.Float64("p", 0.15, "Cut-off percentage for intelligent and stupid")
 	maxGraspDistance := flag.Float64("mgd", 250.0, "Cut-off for grasp distance")
 	minLiftHeight := flag.Float64("mlh", 50.0, "Min lifting height for successful grasps.")
+	stabilFactor := flag.Float64("s", 2.0, "How much bigger the mean values must be compared to the standard deviation.")
 	trajectoryLength := flag.Int("t", 75, "The number of data points for covariance calculations.")
 	tsneIterations := flag.Int("tsne", 10000, "Number of iterations for t-SNE")
 	k := flag.Int("k", 10, "k-nearest neighbour after clustering")
@@ -112,11 +113,15 @@ func main() {
 
 		WriteResults("/Users/zahedi/Desktop/iros.results.csv", irosResults)
 
-		AnalyseIntelligent(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.intelligent.csv")
-		AnalyseStupid(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.stupid.csv")
+		intelligent := AnalyseIntelligent(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.intelligent.csv")
+		stupid := AnalyseStupid(irosResults, *directory, irosCovariance, "/Users/zahedi/Desktop/iros.stupid.csv")
 
 		ConvertIROSMatrixResults("/Users/zahedi/Desktop/iros.intelligent.csv")
 		ConvertIROSMatrixResults("/Users/zahedi/Desktop/iros.stupid.csv")
+
+		irosAnalysis := AnalyseData(intelligent, stupid, *stabilFactor)
+
+		ConvertIROSAnalysisResults("/Users/zahedi/Desktop/iros.analysis.txt", irosAnalysis)
 
 	}
 

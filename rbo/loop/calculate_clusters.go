@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage float64, k int, output string) Results {
+func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage float64, k int, output, outputDirectory string) Results {
 
 	maxMCW := -1.0
 	minMCW := -1.0
@@ -79,7 +79,7 @@ func CalculateInterestingClusters(data Results, graspDistanceCutoff, percentage 
 	s = s + fmt.Sprintf("Sum         %d\n", nrOfIntelligent+nrOfStupid+nrOfNone)
 	fmt.Println(s)
 
-	f, err := os.Create(output)
+	f, err := os.Create(fmt.Sprintf("%s/%s", outputDirectory, output))
 	if err != nil {
 		panic(err)
 	}

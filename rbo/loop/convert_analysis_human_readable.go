@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func ConvertIROSAnalysisResults(output string, analysis []Analysis) {
+func ConvertIROSAnalysisResults(dir, output string, analysis []Analysis) {
 	var str []string
 
 	for _, a := range analysis {
@@ -14,14 +14,14 @@ func ConvertIROSAnalysisResults(output string, analysis []Analysis) {
 		}
 		if a.UseChange == true {
 			if a.Change > 0.0 {
-				str = append(str, fmt.Sprintf("Make Index %d stiffer, because the difference between Good and Bad is %.3f\n", a.Change))
+				str = append(str, fmt.Sprintf("Make Index %d stiffer, because the difference between Good and Bad is %.3f\n", a.Index, a.Change))
 			}
 			if a.Change < 0.0 {
-				str = append(str, fmt.Sprintf("Make Index %d more compliant, because the difference between Good and Bad is %.3f\n", a.Change))
+				str = append(str, fmt.Sprintf("Make Index %d more compliant, because the difference between Good and Bad is %.3f\n", a.Index, a.Change))
 			}
 		}
 	}
 
-	WriteStrings(output, str)
+	WriteStrings(fmt.Sprintf("%s/%s", dir, output), str)
 
 }

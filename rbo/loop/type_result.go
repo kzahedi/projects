@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"regexp"
@@ -68,79 +67,15 @@ func CreateResultsContainer(hands, ctrls []*regexp.Regexp, directory *string, re
 	}
 }
 
-func ReadResults(filename string) Results {
-	data := make(Results)
-
-	file, _ := os.Open(filename)
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	record, err := reader.Read()
-	for err != io.EOF {
-
-		if strings.HasPrefix(record[0], "#") {
-			record, err = reader.Read()
-			continue
-		}
-
-		// "# Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position, Successful"
-		experiment := record[0]
-		mcw, _ := strconv.ParseFloat(record[1], 64)
-		graspDistance, _ := strconv.ParseFloat(record[2], 64)
-		posX, _ := strconv.ParseFloat(record[3], 64)
-		posY, _ := strconv.ParseFloat(record[4], 64)
-		objectType, _ := strconv.ParseInt(record[5], 10, 64)
-		objectPosition, _ := strconv.ParseInt(record[6], 10, 64)
-
-		successfull := false
-		if record[7] == "true" {
-			successfull = true
-		}
-
-		intelligent := false
-		if len(record) > 7 {
-			if record[7] == "true" {
-				intelligent = true
-			}
-		}
-
-		stupid := false
-		if len(record) > 8 {
-			if record[8] == "true" {
-				stupid = true
-			}
-		}
-
-		selectedForAnalysis := false
-		if len(record) > 9 {
-			if record[9] == "true" {
-				selectedForAnalysis = true
-			}
-		}
-
-		distance := -1.0
-		if len(record) > 10 {
-			distance, _ = strconv.ParseFloat(record[10], 64)
-		}
-
-		r := Result{MC_W: mcw, GraspDistance: graspDistance, PosX: posX, PosY: posY, ObjectType: int(objectType), ObjectPosition: int(objectPosition), ClusteredByTSE: true, Successful: successfull, Intelligent: intelligent, Stupid: stupid, SelectedForAnalysis: selectedForAnalysis, Distance: distance}
-
-		data[experiment] = r
-
-		record, err = reader.Read()
-	}
-
-	return data
-}
-
-func WriteResults(filename string, results Results) {
-	file, err := os.Create(filename)
+func WriteResults(filename string, results Results, outputDir string) {
+	file, err := os.Create(fmt.Sprintf("%s/%s", outputDir, filename))
 	defer file.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 	w := bufio.NewWriter(file)
-	s := "# Experiment, MC_W, Grasp Distance, t-SNE X, t-SNE Y, Object Type, Object Position, Successful, Distance"
+	s := "# Experiment, MC_W, GraspDistance, PosX, PosY, ObjectType, ObjectPosition, Successful, Intelligent, Stupid, SelectedForAnalysis, Distance"
+
 	w.WriteString(s)
 	for key, value := range results {
 		if value.ClusteredByTSE == true {
@@ -149,4 +84,40 @@ func WriteResults(filename string, results Results) {
 			w.Flush()
 		}
 	}
+}
+
+func ReadResults(filename string) Results {
+	results := make(Results)
+	file, err := os.Open(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	r := csv.NewReader(file)
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, v := range records {
+		if strings.Contains(v[0], "#") {
+			continue
+		}
+		key := v[0]
+		mcw, _ := strconv.ParseFloat(v[1], 64)
+		graspDistance, _ := strconv.ParseFloat(v[2], 64)
+		posX, _ := strconv.ParseFloat(v[3], 64)
+		posY, _ := strconv.ParseFloat(v[4], 64)
+		otype, _ := strconv.ParseInt(v[5], 10, 64)
+		opos, _ := strconv.ParseInt(v[6], 10, 64)
+		intelligent, _ := strconv.ParseBool(v[7])
+		stupid, _ := strconv.ParseBool(v[8])
+		selected, _ := strconv.ParseBool(v[9])
+		distance, _ := strconv.ParseFloat(v[10], 64)
+
+		results[key] = Result{MC_W: mcw, GraspDistance: graspDistance, PosX: posX, PosY: posY, ObjectType: int(otype), ObjectPosition: int(opos), ClusteredByTSE: true, Successful: selected, Intelligent: intelligent, Stupid: stupid, SelectedForAnalysis: selected, Distance: distance}
+	}
+
+	return results
 }

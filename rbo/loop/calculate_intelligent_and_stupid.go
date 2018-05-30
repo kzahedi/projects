@@ -6,7 +6,7 @@ import (
 	"github.com/gonum/stat"
 )
 
-func AnalyseIntelligent(data Results, parent, input, output string) [][]float64 {
+func AnalyseIntelligent(data Results, parent, input, output, outputDir string) [][]float64 {
 	var intelligent []string
 
 	for key, value := range data {
@@ -43,12 +43,12 @@ func AnalyseIntelligent(data Results, parent, input, output string) [][]float64 
 		meanAndStd[1][col] = s
 	}
 
-	WriteCsvFloatMatrix(output, meanAndStd)
+	WriteCsvFloatMatrix(fmt.Sprintf("%s/%s", outputDir, output), meanAndStd)
 
 	return meanAndStd
 }
 
-func AnalyseStupid(data Results, parent, input, output string) [][]float64 {
+func AnalyseStupid(data Results, parent, input, output, outputDir string) [][]float64 {
 	var stupid []string
 
 	for key, value := range data {
@@ -85,7 +85,7 @@ func AnalyseStupid(data Results, parent, input, output string) [][]float64 {
 		meanAndStd[1][col] = s
 	}
 
-	WriteCsvFloatMatrix(output, meanAndStd)
+	WriteCsvFloatMatrix(fmt.Sprintf("%s/%s", outputDir, output), meanAndStd)
 
 	return meanAndStd
 }

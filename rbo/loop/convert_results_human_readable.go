@@ -95,9 +95,9 @@ func getStringsIROS(label string, indices [][]int, data [][]float64) [][]string 
 	return r
 }
 
-func ConvertIROSMatrixResults(input string) {
+func ConvertIROSMatrixResults(dir, input, out string) {
 
-	data := ReadCSVToFloat(input)
+	data := ReadCSVToFloat(fmt.Sprintf("%s/%s", dir, input))
 
 	thumb := [][]int{{29, 30}, {28, 29}, {27, 28}, {26, 27}, {25, 30}}
 	palm := [][]int{{24, 25}, {23, 24}, {22, 23}, {21, 22}, {0, 21}}
@@ -175,7 +175,7 @@ func ConvertIROSMatrixResults(input string) {
 		output = append(output, v)
 	}
 
-	WriteCsvMatrix(input, output)
+	WriteCsvMatrix(fmt.Sprintf("%s/%s", dir, out), output)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -8,7 +8,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results) Results {
+func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results, output, dir string) Results {
 	fmt.Println("Calculating TSNE")
 	files := ListAllFilesRecursivelyByFilename(*directory, input)
 
@@ -26,7 +26,6 @@ func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory *strin
 				selected = append(selected, v)
 			}
 		}
-		fmt.Println("number:", len(selected))
 	}
 
 	fmt.Println("Clustering on:", len(covariances))
@@ -55,6 +54,8 @@ func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory *strin
 		v.ClusteredByTSE = true
 		results[key] = v
 	}
+
+	WriteResults(output, results, dir)
 
 	return results
 }

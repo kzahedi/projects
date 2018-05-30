@@ -9,11 +9,11 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory *string, lastNSteps, cutOff int, results Results) Results {
+func CalculateGraspDistance(hands, ctrls []*regexp.Regexp, directory string, lastNSteps, cutOff int, results Results) Results {
 	fmt.Println("Calculating Grasp Distances")
 	objectFilename := "obstacle.sofastates.csv"
 	handFilename := "hand.sofastates.csv"
-	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
+	handFiles := ListAllFilesRecursivelyByFilename(directory, handFilename)
 	fcutOff := float64(cutOff)
 
 	selectedFiles := SelectFiles(handFiles, hands, ctrls)

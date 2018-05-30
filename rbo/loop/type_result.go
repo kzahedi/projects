@@ -50,9 +50,9 @@ func PrintStupid(r map[string]Result) {
 	}
 }
 
-func CreateResultsContainer(hands, ctrls []*regexp.Regexp, directory *string, results *Results) {
+func CreateResultsContainer(hands, ctrls []*regexp.Regexp, directory string, results *Results) {
 	filename := "hand.sofastates.csv"
-	files := ListAllFilesRecursivelyByFilename(*directory, filename)
+	files := ListAllFilesRecursivelyByFilename(directory, filename)
 
 	for _, hand := range hands {
 		for _, ctrl := range ctrls {

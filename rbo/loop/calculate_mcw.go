@@ -10,11 +10,11 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateMCW(hands, ctrls []*regexp.Regexp, directory *string, wBins, aBins int, results Results) Results {
+func CalculateMCW(hands, ctrls []*regexp.Regexp, directory string, wBins, aBins int, results Results) Results {
 	fmt.Println("Calculating MC_W")
 	ctrlFilename := "control.states.csv"
 	handFilename := "hand.sofastates.csv"
-	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
+	handFiles := ListAllFilesRecursivelyByFilename(directory, handFilename)
 
 	handMin, handMax, handBins := generateFingerTipMinMaxBins(hands, ctrls, directory, wBins)
 	ctrlMin, ctrlMax, ctrlBins := generateControllerMinMaxBins(hands, ctrls, directory, wBins)

@@ -5,17 +5,22 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/kzahedi/utils"
 )
+
+type fnConvertSofaState func(string, string, []*regexp.Regexp, []*regexp.Regexp, string)
+type fnConvertMatrixResults func(string, string, string)
+type fnConvertAnalysisResults func(dir, output string, analysis []Analysis)
 
 func main() {
 	// directory := flag.String("d", "", "Directory")
 	directory := flag.String("d", "/Users/zahedi/projects/TU.Berlin/experiments/run2017011101/", "Directory")
 	outputDirectory := flag.String("o", "/Users/zahedi/Desktop/", "Output Directory")
 	iros := flag.Bool("iros", false, "Calculate IROS Results")
-	// segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
-	// frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
+	segment := flag.Bool("segment", false, "Calculate with segment tips transformed into local coordinate systems of the segment roots")
+	frameByFrame := flag.Bool("fbf", false, "Calculate with coordinate system transformed into the local predecessor coordinate system")
 	percentage := flag.Float64("p", 0.15, "Cut-off percentage for intelligent and stupid")
 	maxGraspDistance := flag.Float64("mgd", 250.0, "Cut-off for grasp distance")
 	minLiftHeight := flag.Float64("mlh", 50.0, "Min lifting height for successful grasps.")
@@ -24,6 +29,56 @@ func main() {
 	tsneIterations := flag.Int("tsne", 10000, "Number of iterations for t-SNE")
 	k := flag.Int("k", 10, "k-nearest neighbour after clustering")
 	flag.Parse()
+
+	////////////////////////////////////////////////////////////
+	// IROS Results
+	////////////////////////////////////////////////////////////
+
+	// Creating container for all results
+
+	// default
+	prefix := ""
+
+	if *iros == true {
+		prefix = "iros"
+		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
+		convertSofaStates := ConvertSofaStatesIROS
+		convertMatrixResults := ConvertIROSMatrixResults
+		convertAnalysisResults := ConvertIROSAnalysisResults
+		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
+	}
+	if *segment == true {
+		prefix = "segment"
+		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
+		convertSofaStates := ConvertSofaStatesSegment
+		convertMatrixResults := ConvertSegmentMatrixResults
+		convertAnalysisResults := ConvertIROSAnalysisResults
+		// convertAnalysisResults := ConvertSegmentAnalysisResults
+		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
+	}
+	if *frameByFrame == true {
+		prefix = "frame.by.frame"
+		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
+		convertSofaStates := ConvertSofaStatesFrameByFrame
+		convertMatrixResults := ConvertFrameByFrameMatrixResults
+		convertAnalysisResults := ConvertIROSAnalysisResults
+		// convertAnalysisResults := ConvertFrameByFrameAnalysisResults
+		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
+	}
+
+	if prefix == "" {
+		fmt.Println("Please choose a method")
+		os.Exit(0)
+	}
+
+}
+
+func doIt(directory, outputDir, prefix string,
+	convertSofaStates fnConvertSofaState,
+	convertMatrixResults fnConvertMatrixResults,
+	convertAnalysisResults fnConvertAnalysisResults,
+	percentage, maxGraspDistance, minLiftHeight,
+	stabilFactor float64, trajectoryLength, tsneIterations, k int) {
 
 	////////////////////////////////////////////////////////////
 	// define regexp patterns
@@ -51,245 +106,88 @@ func main() {
 	obstacleSofaStates := "obstacle.sofastates.txt"
 	obstacleSofaStatesCsv := "obstacle.sofastates.csv"
 
-	////////////////////////////////////////////////////////////
-	// IROS Results
-	////////////////////////////////////////////////////////////
-
-	// Creating container for all results
-
-	if *iros == true {
-		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, "iros")
-		fmt.Println("Checking ", outputDir)
-		if _, err := os.Stat(outputDir); err != nil {
-			os.MkdirAll(outputDir, 0755)
-		}
-
-		fmt.Println(">>> Calculating IROS Results")
-		irosResults := make(Results)
-		CreateResultsContainer(grasps, ctrls, directory, &irosResults)
-
-		irosHandSofaStatesFile := "iros.hand.sofastates.csv"
-		irosDiffHandSofaStatesFile := "iros.diffed.hand.sofastates.csv"
-		irosCovarianceFile := "iros.covariance.csv"
-		irosClusterInfoFile := "iros.cluster.info.txt"
-		irosResultsFile := "iros.results.csv"
-		irosIntelligentFile := "iros.intelligent.csv"
-		irosStupidFile := "iros.stupid.csv"
-		irosIntelligentHumanFile := "iros.intelligent.human.csv"
-		irosStupidHumanFile := "iros.stupid.human.csv"
-		irosAnalysisFile := "iros.analysis.txt"
-		irosTSNEFile := "iros.tsne.results.txt"
-
-		if utils.FileExists(fmt.Sprintf("%s/%s", outputDir, irosTSNEFile)) == true {
-			irosResults = ReadResults(fmt.Sprintf("%s/%s", outputDir, irosTSNEFile))
-		} else {
-			// these four liens are needed for grasp success calculations
-			ConvertSofaStatesPreprocessing(obstacleSofaStates, grasps, ctrls, directory, false)
-			ConvertSofaStatesPreprocessing(obstacleSofaStates, prescritives, ctrls, directory, false)
-			ConvertSofaStatesPreprocessing(handSofaStates, grasps, ctrls, directory, false)
-			ConvertSofaStatesPreprocessing(handSofaStates, prescritives, ctrls, directory, false)
-
-			// convert SOFA files to CSV
-			// including preprocessing
-
-			ConvertSofaStatesIROS(handSofaStates, irosHandSofaStatesFile, grasps, ctrls, directory)
-			ConvertSofaStatesIROS(handSofaStates, irosHandSofaStatesFile, prescritives, ctrls, directory)
-
-			// calculate difference behaviour (grasp - prescriptive)
-
-			CalculateDifferenceBehaviour(irosHandSofaStatesFile, irosDiffHandSofaStatesFile, grasps, ctrls, directory)
-
-			// calculate co-variance matrices
-
-			CalculateCovarianceMatrices(irosDiffHandSofaStatesFile, irosCovarianceFile, grasps, ctrls, directory, *trajectoryLength, MODE_FULL)
-
-			// determine if successful or not
-
-			irosResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, *minLiftHeight, irosResults) // checked
-
-			// Calculating MC_W
-
-			irosResults = CalculateMCW(grasps, ctrls, directory, 100, 30, irosResults) // checked
-
-			// Calculating Grasp Distance
-
-			irosResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, irosResults) // checked
-
-			// Convert object position to integer values
-
-			irosResults = ExtractObjectPosition(irosResults) // checked
-
-			// Convert object type to integer values
-
-			irosResults = ExtractObjectType(irosResults) // checked
-
-			// Calculate t-SNE
-
-			irosResults = CalculateTSNE(irosCovarianceFile, grasps, ctrls, directory, *tsneIterations, false, irosResults, irosTSNEFile, outputDir)
-		}
-
-		// Calculate Clusters
-
-		fmt.Println("hier 0")
-		irosResults = CalculateInterestingClusters(irosResults, *maxGraspDistance, *percentage, *k, irosClusterInfoFile, outputDir) // checked
-		fmt.Println("hier 1")
-
-		WriteResults(irosResultsFile, irosResults, outputDir)
-		fmt.Println("hier 2")
-
-		intelligent := AnalyseIntelligent(irosResults, *directory, irosCovarianceFile, irosIntelligentFile, outputDir)
-		fmt.Println("hier 3")
-		stupid := AnalyseStupid(irosResults, *directory, irosCovarianceFile, irosStupidFile, outputDir)
-		fmt.Println("hier 4")
-
-		ConvertIROSMatrixResults(outputDir, irosIntelligentFile, irosIntelligentHumanFile)
-		fmt.Println("hier 5")
-		ConvertIROSMatrixResults(outputDir, irosStupidFile, irosStupidHumanFile)
-		fmt.Println("hier 6")
-
-		irosAnalysis := AnalyseData(intelligent, stupid, *stabilFactor)
-		fmt.Println("hier 7")
-
-		ConvertIROSAnalysisResults(outputDir, irosAnalysisFile, irosAnalysis)
-		fmt.Println("hier 8")
-
+	fmt.Println("Checking ", outputDir)
+	if _, err := os.Stat(outputDir); err != nil {
+		os.MkdirAll(outputDir, 0755)
 	}
-}
 
-//
-// 	////////////////////////////////////////////////////////////
-// 	// Segment Results
-// 	////////////////////////////////////////////////////////////
-//
-// 	// Creating container for all results
-//
-// 	if *segment == true {
-// 		fmt.Println(">>> Calculating Segment Results")
-// 		segmentResults := make(Results)
-// 		CreateResultsContainer(grasps, ctrls, directory, &segmentResults)
-//
-// 		segmentHandSofaStates := "segment.hand.sofastates.csv"
-// 		segmentDiffHandSofaStates := "segment.diffed.hand.sofastates.csv"
-// 		segmentCovariance := "segment.covariance.csv"
-//
-// 		// convert SOFA files to CSV
-// 		// including preprocessing
-//
-// 		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, grasps, ctrls, directory)       // checked
-// 		ConvertSofaStatesSegment(handSofaStates, segmentHandSofaStates, prescritives, ctrls, directory) // checked
-//
-// 		// calculate difference behaviour (grasp - prescriptive)
-//
-// 		CalculateDifferenceBehaviour(segmentHandSofaStates, segmentDiffHandSofaStates, grasps, ctrls, directory) // checked
-//
-// 		// calculate co-variance matrices
-//
-// 		CalculateCovarianceMatrices(segmentDiffHandSofaStates, segmentCovariance, grasps, ctrls, directory, *trajectoryLength, MODE_SEGMENT) // checked
-//
-// 		// determine if successful or not
-//
-// 		segmentResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, *minLiftHeight, segmentResults) // checked
-//
-// 		// Calculating MC_W
-//
-// 		segmentResults = CalculateMCW(grasps, ctrls, directory, 100, 30, segmentResults) // checked
-//
-// 		// Calculating Grasp Distance
-//
-// 		segmentResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, segmentResults) // checked
-//
-// 		// Convert object position to integer values
-//
-// 		segmentResults = ExtractObjectPosition(segmentResults) // checked
-//
-// 		// Convert object type to integer values
-//
-// 		segmentResults = ExtractObjectType(segmentResults) // checked
-//
-// 		// Calculate t-SNE
-//
-// 		// segmentResults = CalculateTSNE("segment.covariance.csv", []*regexp.Regexp{rbohand2}, ctrls, directory, *tsneIterations, false, segmentResults) // checked
-// 		segmentResults = CalculateTSNE("segment.covariance.csv", grasps, ctrls, directory, *tsneIterations, false, segmentResults) // checked
-//
-// 		// Calculate Clusters
-//
-// 		segmentResults = CalculateInterestingClusters(segmentResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/segment.cluster.info.txt") // checked
-//
-// 		WriteResults("/Users/zahedi/Desktop/segment.results.csv", segmentResults)
-//
-// 		// WriteResults("/Users/zahedi/Desktop/segment.results.csv", &segmentResults)
-//
-// 		AnalyseIntelligent(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.intelligent.csv") // checked
-// 		AnalyseStupid(segmentResults, *directory, segmentCovariance, "/Users/zahedi/Desktop/segment.stupid.csv")           // checked
-//
-// 		ConvertSegmentMatrixResults("/Users/zahedi/Desktop/segment.intelligent.csv")
-// 		ConvertSegmentMatrixResults("/Users/zahedi/Desktop/segment.stupid.csv")
-//
-// 	}
-//
-// 	////////////////////////////////////////////////////////////
-// 	// Frame by Frame Results
-// 	////////////////////////////////////////////////////////////
-//
-// 	if *frameByFrame == true {
-// 		fmt.Println(">>> Calculating Frame By Frame Results")
-// 		frameByFrameResults := make(Results)
-// 		CreateResultsContainer(grasps, ctrls, directory, &frameByFrameResults)
-//
-// 		frameByFrameHandSofaStates := "frame.by.frame.hand.sofastates.csv"
-// 		frameByFrameDiffHandSofaStates := "frame.by.frame.diffed.hand.sofastates.csv"
-// 		frameByFrameCovariance := "frame.by.frame.covariance.csv"
-//
-// 		// convert SOFA files to CSV
-// 		// including preprocessing
-//
-// 		ConvertSofaStatesFrameByFrame(handSofaStates, frameByFrameHandSofaStates, grasps, ctrls, directory)
-// 		ConvertSofaStatesFrameByFrame(handSofaStates, frameByFrameHandSofaStates, prescritives, ctrls, directory)
-//
-// 		// calculate difference behaviour (grasp - prescriptive)
-//
-// 		CalculateDifferenceBehaviour(frameByFrameHandSofaStates, frameByFrameDiffHandSofaStates, grasps, ctrls, directory)
-//
-// 		// calculate co-variance matrices
-//
-// 		CalculateCovarianceMatrices(frameByFrameDiffHandSofaStates, frameByFrameCovariance, grasps, ctrls, directory, *trajectoryLength, MODE_FRAME_BY_FRAME)
-//
-// 		// determine if successful or not
-//
-// 		frameByFrameResults = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, *minLiftHeight, frameByFrameResults) // checked
-//
-// 		// Calculating MC_W
-//
-// 		frameByFrameResults = CalculateMCW(grasps, ctrls, directory, 100, 30, frameByFrameResults) // checked
-//
-// 		// Calculating Grasp Distance
-//
-// 		frameByFrameResults = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, frameByFrameResults) // checked
-//
-// 		// Convert object position to integer values
-//
-// 		frameByFrameResults = ExtractObjectPosition(frameByFrameResults) // checked
-//
-// 		// Convert object type to integer values
-//
-// 		frameByFrameResults = ExtractObjectType(frameByFrameResults) // checked
-//
-// 		// Calculate t-SNE
-//
-// 		// frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", []*regexp.Regexp{rbohand2}, ctrls, directory, *tsneIterations, false, frameByFrameResults)
-// 		frameByFrameResults = CalculateTSNE("frame.by.frame.covariance.csv", grasps, ctrls, directory, *tsneIterations, false, frameByFrameResults)
-//
-// 		// Calculate Clusters
-//
-// 		frameByFrameResults = CalculateInterestingClusters(frameByFrameResults, *maxGraspDistance, *percentage, *k, "/Users/zahedi/Desktop/frameByFrame.cluster.info.txt") // checked
-//
-// 		WriteResults("/Users/zahedi/Desktop/frame.by.frame.results.csv", frameByFrameResults)
-//
-// 		AnalyseIntelligent(frameByFrameResults, *directory, frameByFrameCovariance, "/Users/zahedi/Desktop/frameByFrame.intelligent.csv")
-// 		AnalyseStupid(frameByFrameResults, *directory, frameByFrameCovariance, "/Users/zahedi/Desktop/frameByFrame.stupid.csv")
-//
-// 		ConvertFrameByFrameMatrixResults("/Users/zahedi/Desktop/frameByFrame.intelligent.csv")
-// 		ConvertFrameByFrameMatrixResults("/Users/zahedi/Desktop/frameByFrame.stupid.csv")
-//
-// 	}
-//
+	fmt.Println(fmt.Sprintf(">>> Calculating %s Results", strings.ToUpper(prefix)))
+	results := make(Results)
+	CreateResultsContainer(grasps, ctrls, directory, &results)
+
+	handSofaStatesFile := fmt.Sprintf("%s.hand.sofastates.csv", prefix)
+	diffHandSofaStatesFile := fmt.Sprintf("%s.diffed.hand.sofastates.csv", prefix)
+	covarianceFile := fmt.Sprintf("%s.covariance.csv", prefix)
+	clusterInfoFile := fmt.Sprintf("%s.cluster.info.txt", prefix)
+	resultsFile := fmt.Sprintf("%s.results.csv", prefix)
+	intelligentFile := fmt.Sprintf("%s.intelligent.csv", prefix)
+	stupidFile := fmt.Sprintf("%s.stupid.csv", prefix)
+	intelligentHumanFile := fmt.Sprintf("%s.intelligent.human.csv", prefix)
+	stupidHumanFile := fmt.Sprintf("%s.stupid.human.csv", prefix)
+	analysisFile := fmt.Sprintf("%s.analysis.txt", prefix)
+	tsneFile := fmt.Sprintf("%s.tsne.results.txt", prefix)
+
+	if utils.FileExists(fmt.Sprintf("%s/%s", outputDir, tsneFile)) == true {
+		results = ReadResults(fmt.Sprintf("%s/%s", outputDir, tsneFile))
+	} else {
+		// these four liens are needed for grasp success calculations
+		ConvertSofaStatesPreprocessing(obstacleSofaStates, grasps, ctrls, directory, false)
+		ConvertSofaStatesPreprocessing(obstacleSofaStates, prescritives, ctrls, directory, false)
+		ConvertSofaStatesPreprocessing(handSofaStates, grasps, ctrls, directory, false)
+		ConvertSofaStatesPreprocessing(handSofaStates, prescritives, ctrls, directory, false)
+
+		// convert SOFA files to CSV
+		// including preprocessing
+
+		convertSofaStates(handSofaStates, handSofaStatesFile, grasps, ctrls, directory)
+		convertSofaStates(handSofaStates, handSofaStatesFile, prescritives, ctrls, directory)
+
+		// calculate difference behaviour (grasp - prescriptive)
+
+		CalculateDifferenceBehaviour(handSofaStatesFile, diffHandSofaStatesFile, grasps, ctrls, directory)
+
+		// calculate co-variance matrices
+
+		CalculateCovarianceMatrices(diffHandSofaStatesFile, covarianceFile, grasps, ctrls, directory, trajectoryLength, MODE_FULL)
+
+		// determine if successful or not
+
+		results = CalculateSuccess(obstacleSofaStatesCsv, grasps, ctrls, directory, minLiftHeight, results) // checked
+
+		// Calculating MC_W
+
+		results = CalculateMCW(grasps, ctrls, directory, 100, 30, results) // checked
+
+		// Calculating Grasp Distance
+
+		results = CalculateGraspDistance(grasps, ctrls, directory, 10, 500, results) // checked
+
+		// Convert object position to integer values
+
+		results = ExtractObjectPosition(results) // checked
+
+		// Convert object type to integer values
+
+		results = ExtractObjectType(results) // checked
+
+		// Calculate t-SNE
+
+		results = CalculateTSNE(covarianceFile, grasps, ctrls, directory, tsneIterations, false, results, tsneFile, outputDir)
+	}
+
+	// Calculate Clusters
+
+	results = CalculateInterestingClusters(results, maxGraspDistance, percentage, k, clusterInfoFile, outputDir) // checked
+
+	WriteResults(resultsFile, results, outputDir)
+
+	intelligent := AnalyseIntelligent(results, directory, covarianceFile, intelligentFile, outputDir)
+	stupid := AnalyseStupid(results, directory, covarianceFile, stupidFile, outputDir)
+
+	convertMatrixResults(outputDir, intelligentFile, intelligentHumanFile)
+	convertMatrixResults(outputDir, stupidFile, stupidHumanFile)
+
+	analysis := AnalyseData(intelligent, stupid, stabilFactor)
+
+	convertAnalysisResults(outputDir, analysisFile, analysis)
+}

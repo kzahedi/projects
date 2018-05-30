@@ -8,10 +8,10 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, wBins int) ([]float64, []float64, []int) {
+func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory string, wBins int) ([]float64, []float64, []int) {
 	fmt.Println("Getting min/max/bin values for hand")
 	handFilename := "hand.sofastates.csv"
-	handFiles := ListAllFilesRecursivelyByFilename(*directory, handFilename)
+	handFiles := ListAllFilesRecursivelyByFilename(directory, handFilename)
 
 	iterations := 0
 	for _, hand := range hands {
@@ -68,10 +68,10 @@ func generateFingerTipMinMaxBins(hands, ctrls []*regexp.Regexp, directory *strin
 	return minFingerTip, maxFingerTip, binsFingerTip
 }
 
-func generateControllerMinMaxBins(hands, ctrls []*regexp.Regexp, directory *string, aBins int) ([]float64, []float64, []int) {
+func generateControllerMinMaxBins(hands, ctrls []*regexp.Regexp, directory string, aBins int) ([]float64, []float64, []int) {
 	fmt.Println("Getting min/max/bin values for controller")
 	ctrlFilename := "control.states.csv"
-	ctrlFiles := ListAllFilesRecursivelyByFilename(*directory, ctrlFilename)
+	ctrlFiles := ListAllFilesRecursivelyByFilename(directory, ctrlFilename)
 
 	iterations := 0
 	for _, hand := range hands {

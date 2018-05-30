@@ -8,9 +8,9 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory *string, iterations int, successfulOnly bool, results Results, output, dir string) Results {
+func CalculateTSNE(input string, hands, ctrls []*regexp.Regexp, directory string, iterations int, successfulOnly bool, results Results, output, dir string) Results {
 	fmt.Println("Calculating TSNE")
-	files := ListAllFilesRecursivelyByFilename(*directory, input)
+	files := ListAllFilesRecursivelyByFilename(directory, input)
 
 	covariances := SelectFiles(files, hands, ctrls)
 

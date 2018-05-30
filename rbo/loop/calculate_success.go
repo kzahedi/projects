@@ -8,9 +8,9 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func CalculateSuccess(input string, hands, ctrls []*regexp.Regexp, directory *string, height float64, results Results) Results {
+func CalculateSuccess(input string, hands, ctrls []*regexp.Regexp, directory string, height float64, results Results) Results {
 	fmt.Println("Calculating Success")
-	objectFiles := ListAllFilesRecursivelyByFilename(*directory, input)
+	objectFiles := ListAllFilesRecursivelyByFilename(directory, input)
 
 	osizes := make(map[string]float64)
 	osizes["objectcylinder"] = 20.0

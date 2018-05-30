@@ -9,9 +9,9 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-func ConvertSofaStatesFrameByFrame(input, output string, hands, ctrls []*regexp.Regexp, directory *string) {
+func ConvertSofaStatesFrameByFrame(input, output string, hands, ctrls []*regexp.Regexp, directory string) {
 	fmt.Println("Converting sofa state files per segment:", input)
-	files := ListAllFilesRecursivelyByFilename(*directory, input)
+	files := ListAllFilesRecursivelyByFilename(directory, input)
 
 	selectedFiles := SelectFiles(files, hands, ctrls)
 	bar := pb.StartNew(len(selectedFiles))

@@ -198,9 +198,9 @@ func getStringsSegment(label string, index int, data [][]float64) []string {
 	return s
 }
 
-func ConvertSegmentMatrixResults(input string) {
+func ConvertSegmentMatrixResults(dir, input, out string) {
 
-	data := ReadCSVToFloat(input)
+	data := ReadCSVToFloat(fmt.Sprintf("%s/%s", dir, input))
 
 	index := 5
 	middle := 4
@@ -266,16 +266,16 @@ func ConvertSegmentMatrixResults(input string) {
 	output = append(output, palmString)
 	output = append(output, thumbString)
 
-	WriteCsvMatrix(input, output)
+	WriteCsvMatrix(fmt.Sprintf("%s/%s", dir, out), output)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Frame by Frame
 ////////////////////////////////////////////////////////////////////////////////
 
-func ConvertFrameByFrameMatrixResults(input string) {
+func ConvertFrameByFrameMatrixResults(dir, input, out string) {
 
-	data := ReadCSVToFloat(input)
+	data := ReadCSVToFloat(fmt.Sprintf("%s/%s", dir, input))
 
 	thumb := []int{0, 1, 2, 3}
 	palm := []int{4, 5, 6, 7}
@@ -353,5 +353,5 @@ func ConvertFrameByFrameMatrixResults(input string) {
 		output = append(output, v)
 	}
 
-	WriteCsvMatrix(input, output)
+	WriteCsvMatrix(fmt.Sprintf("%s/%s", dir, out), output)
 }

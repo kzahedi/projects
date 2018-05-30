@@ -16,9 +16,9 @@ const ( // iota is reset to 0
 	MODE_SEGMENT        = iota // c2 == 2
 )
 
-func CalculateCovarianceMatrices(input, output string, hands, ctrls []*regexp.Regexp, directory *string, max, mode int) {
+func CalculateCovarianceMatrices(input, output string, hands, ctrls []*regexp.Regexp, directory string, max, mode int) {
 	fmt.Println("Calculating covariance matrices")
-	files := ListAllFilesRecursivelyByFilename(*directory, input)
+	files := ListAllFilesRecursivelyByFilename(directory, input)
 
 	selectedFiles := SelectFiles(files, hands, ctrls)
 	bar := pb.StartNew(len(selectedFiles))

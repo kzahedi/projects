@@ -26,38 +26,20 @@ func main() {
 		os.Exit(0)
 	}
 
-	aFile := fmt.Sprintf("%s_bizeps_trizeps_filtered.csv", *prefix)
-	wFile := fmt.Sprintf("%s_signal.csv", *prefix)
-	lFile := fmt.Sprintf("%s_labels.csv", *prefix)
+	input := fmt.Sprintf("%s_data.csv", *prefix)
+	raw, _ := utils.ReadFloatCsv(input)
 
-	aRaw, _ := utils.ReadFloatCsv(aFile)
-	wRaw, _ := utils.ReadFloatCsv(wFile)
-	l, _ := utils.ReadCsv(lFile)
-
-	labelAngle := []string{"RShoulderAnteRetroHDCalProjAngle", "RElbowFlexExtAngle"}
-
-	var indices []int
-
-	for i, v := range l {
-		for _, w := range labelAngle {
-			if w == v[0] {
-				fmt.Println("Found ", w, " at index ", i)
-				indices = append(indices, i)
-			}
-		}
-	}
-
-	wSel := utils.GetFloatColumns(wRaw, indices)
+	wRaw := utils.GetFloatColumns(raw, []int{0, 1})
+	aRaw := utils.GetFloatColumns(raw, []int{2, 3})
 
 	if *discrete == true {
-		computeDiscrete(wSel, aRaw, *bins, *prefix)
+		computeDiscrete(wRaw, aRaw, *bins, *prefix)
 	} else {
-		computeContinuous(wSel, aRaw, *prefix)
+		computeContinuous(wRaw, aRaw, *prefix)
 	}
 }
 
 func computeDiscrete(w, a [][]float64, bins int, prefix string) {
-
 	wmin, wmax := dh.GetMinMax(w)
 	amin, amax := dh.GetMinMax(a)
 
@@ -82,6 +64,7 @@ func computeDiscrete(w, a [][]float64, bins int, prefix string) {
 	fmt.Println(fmt.Sprintf("MC_W %f", mcw))
 
 	output := fmt.Sprintf("%s_mcw_discrete.csv", prefix)
+	fmt.Println("Writing to %s.", output)
 	utils.WriteCsvFloatArray(output, mcw_pw, nil)
 }
 
@@ -108,7 +91,7 @@ func computeContinuous(w, a [][]float64, prefix string) {
 
 	fmt.Println(fmt.Sprintf("MC_W %f", mcw))
 
-	output := fmt.Sprintf("%s_mcw_cont.csv", prefix)
+	output := fmt.Sprintf("%s_mcw_continuous.csv", prefix)
 	utils.WriteCsvFloatArray(output, mcw_pw, nil)
 }
 

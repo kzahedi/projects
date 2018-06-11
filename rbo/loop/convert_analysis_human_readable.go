@@ -187,14 +187,14 @@ func getAnalysisStringsIROS(label string, indices [][]int, analysis []Analysis) 
 
 func appendGoodMCString(index int, label string, src, dst int, vs string, a Analysis, r []string) []string {
 	if a.Index == index && a.GoodMC == true {
-		return append(r, fmt.Sprintf("%s Frame %d vs. Frame %d (%s): Good MC with value %.3f\n", label, src, dst, vs, a.Intelligent.Mean))
+		return append(r, fmt.Sprintf("%s Frame %d vs. Frame %d (%s): Good MC with mean %.3f and standard deviation %.3f\n", label, src, dst, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation))
 	}
 	return r
 }
 
 func appendBadMCString(index int, label string, src, dst int, vs string, a Analysis, r []string) []string {
 	if a.Index == index && a.BadMC == true {
-		return append(r, fmt.Sprintf("%s Frame %d vs. Frame %d (%s): Bad MC with value %.3f\n", label, src, dst, vs, a.Intelligent.Mean))
+		return append(r, fmt.Sprintf("%s Frame %d vs. Frame %d (%s): Bad MC with mean %.3f and standard deviation %.3f\n", label, src, dst, vs, a.Stupid.Mean, a.Stupid.StandardDeviation))
 	}
 	return r
 }
@@ -205,7 +205,7 @@ func appendChangeString(index int, label string, src, dst int, vs string, a Anal
 		if a.Change < 0.0 {
 			rec = "increase compliance"
 		}
-		return append(r, fmt.Sprintf("%s Frame %d vs. Frame %d (%s): Stable values where detected for Intelligent (mean %.3f, std %.3f) Stupid (mean %.3f, std %.3f). Difference (mean values) is %.3f. Recommendation is %s\n", label, src, dst, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation, a.Stupid.Mean, a.Stupid.StandardDeviation, a.Change, rec))
+		return append(r, fmt.Sprintf("%s Frame %d vs. Frame %d (%s): Stable values where detected for Intelligent (mean %.3f, std %.3f) Stupid (mean %.3f, std %.3f). Difference (mean values) is %.3f.\n  Recommendation is: %s\n", label, src, dst, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation, a.Stupid.Mean, a.Stupid.StandardDeviation, a.Change, rec))
 	}
 	return r
 }
@@ -333,14 +333,14 @@ func getAnalysisStringsSegment(label string, index int, analysis []Analysis) []s
 
 func appendGoodMCStringSegment(index int, label string, vs string, a Analysis, r []string) []string {
 	if a.Index == index && a.GoodMC == true {
-		return append(r, fmt.Sprintf("%s (%s): Good MC with value %.3f\n", label, vs, a.Intelligent.Mean))
+		return append(r, fmt.Sprintf("%s (%s): Good MC with mean %.3f and standard deviation %.3f\n", label, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation))
 	}
 	return r
 }
 
 func appendBadMCStringSegment(index int, label string, vs string, a Analysis, r []string) []string {
 	if a.Index == index && a.BadMC == true {
-		return append(r, fmt.Sprintf("%s (%s): Bad MC with value %.3f\n", label, vs, a.Intelligent.Mean))
+		return append(r, fmt.Sprintf("%s (%s): Bad MC with mean %.3f and standard deviation %.3f\n", label, vs, a.Stupid.Mean, a.Stupid.StandardDeviation))
 	}
 	return r
 }
@@ -351,7 +351,176 @@ func appendChangeStringSegment(index int, label string, vs string, a Analysis, r
 		if a.Change < 0.0 {
 			rec = "increase compliance"
 		}
-		return append(r, fmt.Sprintf("%s (%s): Stable values where detected for Intelligent (mean %.3f, std %.3f) Stupid (mean %.3f, std %.3f). Difference (mean values) is %.3f. Recommendation is %s\n", label, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation, a.Stupid.Mean, a.Stupid.StandardDeviation, a.Change, rec))
+		return append(r, fmt.Sprintf("%s (%s): Stable values where detected for Intelligent (mean %.3f, std %.3f) Stupid (mean %.3f, std %.3f). Difference (mean values) is %.3f.\n  Recommendation is: %s\n", label, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation, a.Stupid.Mean, a.Stupid.StandardDeviation, a.Change, rec))
+	}
+	return r
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Frame by Frame
+////////////////////////////////////////////////////////////////////////////////
+
+func ConvertFrameByFrameAnalysisResults(dir, output string, analysis []Analysis) {
+	var str []string
+
+	thumb := []int{0, 1, 2, 3}
+	palm := []int{4, 5, 6, 7}
+	pinky := []int{8, 9, 10, 11}
+	ring := []int{12, 13, 14, 15}
+	middle := []int{16, 17, 18, 19}
+	index := []int{20, 21, 22, 23}
+
+	indexStrings := getAnalysisStringsFrameByFrame("Index Finger", index, analysis)
+	middleStrings := getAnalysisStringsFrameByFrame("Middle Finger", middle, analysis)
+	ringStrings := getAnalysisStringsFrameByFrame("Ring Finger", ring, analysis)
+	pinkyStrings := getAnalysisStringsFrameByFrame("Pinky Finger", pinky, analysis)
+	palmStrings := getAnalysisStringsFrameByFrame("Palm", palm, analysis)
+	thumbStrings := getAnalysisStringsFrameByFrame("Thumb", thumb, analysis)
+
+	str = append(str, "############################################################\n")
+	str = append(str, "##### Index Finger\n")
+	str = append(str, "############################################################\n")
+	for _, v := range indexStrings {
+		str = append(str, v)
+	}
+	str = append(str, "############################################################\n")
+	str = append(str, "##### Middle Finger\n")
+	str = append(str, "############################################################\n")
+	for _, v := range middleStrings {
+		str = append(str, v)
+	}
+	str = append(str, "############################################################\n")
+	str = append(str, "##### Ring Finger\n")
+	str = append(str, "############################################################\n")
+	for _, v := range ringStrings {
+		str = append(str, v)
+	}
+	str = append(str, "############################################################\n")
+	str = append(str, "##### Pinky Finger\n")
+	str = append(str, "############################################################\n")
+	for _, v := range pinkyStrings {
+		str = append(str, v)
+	}
+	str = append(str, "############################################################\n")
+	str = append(str, "##### Palm Finger\n")
+	str = append(str, "############################################################\n")
+	for _, v := range palmStrings {
+		str = append(str, v)
+	}
+	str = append(str, "############################################################\n")
+	str = append(str, "##### Thumb Finger\n")
+	str = append(str, "############################################################\n")
+	for _, v := range thumbStrings {
+		str = append(str, v)
+	}
+
+	WriteStrings(fmt.Sprintf("%s/%s", dir, output), str)
+}
+
+func getAnalysisStringsFrameByFrame(label string, indices []int, analysis []Analysis) []string {
+	var r []string
+
+	for i, v := range indices {
+		xxIndex := 9*v + 0
+		xyIndex := 9*v + 1
+		xzIndex := 9*v + 2
+		yxIndex := 9*v + 3
+		yyIndex := 9*v + 4
+		yzIndex := 9*v + 5
+		zxIndex := 9*v + 6
+		zyIndex := 9*v + 7
+		zzIndex := 9*v + 8
+
+		for _, a := range analysis {
+			r = appendGoodMCStringFrameByFrame(xxIndex, i, label, "x vs. x", a, r)
+			r = appendGoodMCStringFrameByFrame(xyIndex, i, label, "x vs. y", a, r)
+			r = appendGoodMCStringFrameByFrame(xzIndex, i, label, "x vs. z", a, r)
+
+			r = appendGoodMCStringFrameByFrame(yxIndex, i, label, "y vs. x", a, r)
+			r = appendGoodMCStringFrameByFrame(yyIndex, i, label, "y vs. y", a, r)
+			r = appendGoodMCStringFrameByFrame(yzIndex, i, label, "y vs. z", a, r)
+
+			r = appendGoodMCStringFrameByFrame(zxIndex, i, label, "z vs. x", a, r)
+			r = appendGoodMCStringFrameByFrame(zyIndex, i, label, "z vs. y", a, r)
+			r = appendGoodMCStringFrameByFrame(zzIndex, i, label, "z vs. z", a, r)
+		}
+	}
+
+	for i, v := range indices {
+		xxIndex := 9*v + 0
+		xyIndex := 9*v + 1
+		xzIndex := 9*v + 2
+		yxIndex := 9*v + 3
+		yyIndex := 9*v + 4
+		yzIndex := 9*v + 5
+		zxIndex := 9*v + 6
+		zyIndex := 9*v + 7
+		zzIndex := 9*v + 8
+
+		for _, a := range analysis {
+			r = appendBadMCStringFrameByFrame(xxIndex, i, label, "x vs. x", a, r)
+			r = appendBadMCStringFrameByFrame(xyIndex, i, label, "x vs. y", a, r)
+			r = appendBadMCStringFrameByFrame(xzIndex, i, label, "x vs. z", a, r)
+
+			r = appendBadMCStringFrameByFrame(yxIndex, i, label, "y vs. x", a, r)
+			r = appendBadMCStringFrameByFrame(yyIndex, i, label, "y vs. y", a, r)
+			r = appendBadMCStringFrameByFrame(yzIndex, i, label, "y vs. z", a, r)
+
+			r = appendBadMCStringFrameByFrame(zxIndex, i, label, "z vs. x", a, r)
+			r = appendBadMCStringFrameByFrame(zyIndex, i, label, "z vs. y", a, r)
+			r = appendBadMCStringFrameByFrame(zzIndex, i, label, "z vs. z", a, r)
+		}
+	}
+
+	for i, v := range indices {
+		xxIndex := 9*v + 0
+		xyIndex := 9*v + 1
+		xzIndex := 9*v + 2
+		yxIndex := 9*v + 3
+		yyIndex := 9*v + 4
+		yzIndex := 9*v + 5
+		zxIndex := 9*v + 6
+		zyIndex := 9*v + 7
+		zzIndex := 9*v + 8
+
+		for _, a := range analysis {
+			r = appendChangeStringFrameByFrame(xxIndex, i, label, "x vs. x", a, r)
+			r = appendChangeStringFrameByFrame(xyIndex, i, label, "x vs. y", a, r)
+			r = appendChangeStringFrameByFrame(xzIndex, i, label, "x vs. z", a, r)
+
+			r = appendChangeStringFrameByFrame(yxIndex, i, label, "y vs. x", a, r)
+			r = appendChangeStringFrameByFrame(yyIndex, i, label, "y vs. y", a, r)
+			r = appendChangeStringFrameByFrame(yzIndex, i, label, "y vs. z", a, r)
+
+			r = appendChangeStringFrameByFrame(zxIndex, i, label, "z vs. x", a, r)
+			r = appendChangeStringFrameByFrame(zyIndex, i, label, "z vs. y", a, r)
+			r = appendChangeStringFrameByFrame(zzIndex, i, label, "z vs. z", a, r)
+		}
+	}
+	return r
+}
+
+func appendGoodMCStringFrameByFrame(index, src int, label string, vs string, a Analysis, r []string) []string {
+	if a.Index == index && a.GoodMC == true {
+		return append(r, fmt.Sprintf("%s Frame %d vs. %d (%s): Good MC with mean %.3f and standard deviation %.3f\n", label, src, src+1, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation))
+	}
+	return r
+}
+
+func appendBadMCStringFrameByFrame(index, src int, label string, vs string, a Analysis, r []string) []string {
+	if a.Index == index && a.BadMC == true {
+		return append(r, fmt.Sprintf("%s Frame %d vs. %d (%s): Bad MC with mean %.3f and standard deviation %.3f\n", label, src, src+1, vs, a.Stupid.Mean, a.Stupid.StandardDeviation))
+	}
+	return r
+}
+
+func appendChangeStringFrameByFrame(index, src int, label string, vs string, a Analysis, r []string) []string {
+	if a.Index == index && a.UseChange == true {
+		rec := "increase stiffness"
+		if a.Change < 0.0 {
+			rec = "increase compliance"
+		}
+		return append(r, fmt.Sprintf("%s Frame %d vs. %d (%s): Stable values where detected for Intelligent (mean %.3f, std %.3f) Stupid (mean %.3f, std %.3f). Difference (mean values) is %.3f.\n  Recommendation is: %s\n", label, src, src+1, vs, a.Intelligent.Mean, a.Intelligent.StandardDeviation, a.Stupid.Mean, a.Stupid.StandardDeviation, a.Change, rec))
 	}
 	return r
 }

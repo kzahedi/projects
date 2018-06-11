@@ -15,7 +15,6 @@ type fnConvertMatrixResults func(string, string, string)
 type fnConvertAnalysisResults func(dir, output string, analysis []Analysis)
 
 func main() {
-	// directory := flag.String("d", "", "Directory")
 	directory := flag.String("d", "/Users/zahedi/projects/TU.Berlin/experiments/run2017011101/", "Directory")
 	outputDirectory := flag.String("o", "/Users/zahedi/Desktop/", "Output Directory")
 	iros := flag.Bool("iros", false, "Calculate IROS Results")
@@ -27,6 +26,7 @@ func main() {
 	stabilFactor := flag.Float64("s", 2.0, "How much bigger the mean values must be compared to the standard deviation.")
 	trajectoryLength := flag.Int("t", 75, "The number of data points for covariance calculations.")
 	tsneIterations := flag.Int("tsne", 10000, "Number of iterations for t-SNE")
+	dataSet := flag.Int("data", 0, "0 = rbohand2, controller0; 1 = rbohand2, controller0-2; 2 = full data")
 	k := flag.Int("k", 10, "k-nearest neighbour after clustering")
 	flag.Parse()
 
@@ -41,29 +41,29 @@ func main() {
 
 	if *iros == true {
 		prefix = "iros"
-		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
+		outputDir := fmt.Sprintf("%s/%s/dataset-%d", *outputDirectory, prefix, *dataSet)
 		convertSofaStates := ConvertSofaStatesIROS
 		convertMatrixResults := ConvertIROSMatrixResults
 		convertAnalysisResults := ConvertIROSAnalysisResults
-		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
+		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k, *dataSet)
 	}
+
 	if *segment == true {
 		prefix = "segment"
-		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
+		outputDir := fmt.Sprintf("%s/%s/dataset-%d", *outputDirectory, prefix, *dataSet)
 		convertSofaStates := ConvertSofaStatesSegment
 		convertMatrixResults := ConvertSegmentMatrixResults
 		convertAnalysisResults := ConvertSegmentAnalysisResults
-		// convertAnalysisResults := ConvertSegmentAnalysisResults
-		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
+		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k, *dataSet)
 	}
+
 	if *frameByFrame == true {
 		prefix = "frame.by.frame"
-		outputDir := fmt.Sprintf("%s/%s", *outputDirectory, prefix)
+		outputDir := fmt.Sprintf("%s/%s/dataset-%d", *outputDirectory, prefix, *dataSet)
 		convertSofaStates := ConvertSofaStatesFrameByFrame
 		convertMatrixResults := ConvertFrameByFrameMatrixResults
-		convertAnalysisResults := ConvertIROSAnalysisResults
-		// convertAnalysisResults := ConvertFrameByFrameAnalysisResults
-		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k)
+		convertAnalysisResults := ConvertFrameByFrameAnalysisResults
+		doIt(*directory, outputDir, prefix, convertSofaStates, convertMatrixResults, convertAnalysisResults, *percentage, *maxGraspDistance, *minLiftHeight, *stabilFactor, *trajectoryLength, *tsneIterations, *k, *dataSet)
 	}
 
 	if prefix == "" {
@@ -77,7 +77,7 @@ func doIt(directory, outputDir, prefix string,
 	convertMatrixResults fnConvertMatrixResults,
 	convertAnalysisResults fnConvertAnalysisResults,
 	percentage, maxGraspDistance, minLiftHeight,
-	stabilFactor float64, trajectoryLength, tsneIterations, k int) {
+	stabilFactor float64, trajectoryLength, tsneIterations, k, dataSet int) {
 
 	////////////////////////////////////////////////////////////
 	// define regexp patterns
@@ -93,9 +93,24 @@ func doIt(directory, outputDir, prefix string,
 	controller1 := regexp.MustCompile(".*-controller1-.*")
 	controller2 := regexp.MustCompile(".*-controller2-.*")
 
-	grasps := []*regexp.Regexp{rbohand2, rbohandkz1, rbohandkz2}
-	prescritives := []*regexp.Regexp{rbohand2p, rbohandkz1p, rbohandkz2p}
-	ctrls := []*regexp.Regexp{controller0, controller1, controller2}
+	var grasps []*regexp.Regexp
+	var prescritives []*regexp.Regexp
+	var ctrls []*regexp.Regexp
+
+	switch dataSet {
+	case 0:
+		grasps = []*regexp.Regexp{rbohand2}
+		prescritives = []*regexp.Regexp{rbohand2p}
+		ctrls = []*regexp.Regexp{controller0}
+	case 1:
+		grasps = []*regexp.Regexp{rbohand2}
+		prescritives = []*regexp.Regexp{rbohand2p}
+		ctrls = []*regexp.Regexp{controller0, controller1, controller2}
+	case 2:
+		grasps = []*regexp.Regexp{rbohand2, rbohandkz1, rbohandkz2}
+		prescritives = []*regexp.Regexp{rbohand2p, rbohandkz1p, rbohandkz2p}
+		ctrls = []*regexp.Regexp{controller0, controller1, controller2}
+	}
 
 	////////////////////////////////////////////////////////////
 	// Preprocessing
@@ -112,6 +127,7 @@ func doIt(directory, outputDir, prefix string,
 
 	fmt.Println(fmt.Sprintf(">>> Calculating %s Results", strings.ToUpper(prefix)))
 	results := make(Results)
+	fmt.Println("Directory: ", directory)
 	CreateResultsContainer(grasps, ctrls, directory, &results)
 
 	handSofaStatesFile := fmt.Sprintf("%s.hand.sofastates.csv", prefix)

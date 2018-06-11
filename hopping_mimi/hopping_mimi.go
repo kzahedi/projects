@@ -38,21 +38,21 @@ func main() {
 	musfibPosition := getColumn(musfibData, 1)
 	musfibVelocity := getColumn(musfibData, 2)
 	musfibAcceleration := getColumn(musfibData, 3)
-	// musfibSensor := getColumn(musfibData, 4)
+	musfibSensor := getColumn(musfibData, 4)
 	musfibAction := getColumn(musfibData, 9)
 
 	muslinData := readDataRaw("muslin.csv")
 	muslinPosition := getColumn(muslinData, 1)
 	muslinVelocity := getColumn(muslinData, 2)
 	muslinAcceleration := getColumn(muslinData, 3)
-	// muslinSensor := getColumn(muslinData, 4)
+	muslinSensor := getColumn(muslinData, 4)
 	muslinAction := getColumn(muslinData, 9)
 
 	dcmotData := readDataRaw("dcmot.csv")
 	dcmotPosition := getColumn(dcmotData, 1)
 	dcmotVelocity := getColumn(dcmotData, 2)
 	dcmotAcceleration := getColumn(dcmotData, 3)
-	// dcmotSensor := combine(dcmotPosition, dcmotVelocity, nil)
+	dcmotSensor := combine(dcmotPosition, dcmotVelocity, nil)
 	dcmotAction := getColumn(dcmotData, 9)
 
 	////////////////////////////////////////////////////////////
@@ -66,28 +66,28 @@ func main() {
 	// musfib and muslin are already normalised, therefore we only get min max for dcmot
 	act_min, act_max := getMinMaxValues(dcmotAction, dcmotAction, dcmotAction)
 	// dcmot sensors is position & velocity
-	// sen_min, sen_max := getMinMaxValues(musfibSensor, muslinSensor, muslinSensor)
-	// dc_pos_min, dc_pos_max := getMinMaxValues(dcmotPosition, dcmotPosition, dcmotPosition)
-	// dc_vel_min, dc_vel_max := getMinMaxValues(dcmotVelocity, dcmotVelocity, dcmotVelocity)
+	sen_min, sen_max := getMinMaxValues(musfibSensor, muslinSensor, muslinSensor)
+	dc_pos_min, dc_pos_max := getMinMaxValues(dcmotPosition, dcmotPosition, dcmotPosition)
+	dc_vel_min, dc_vel_max := getMinMaxValues(dcmotVelocity, dcmotVelocity, dcmotVelocity)
 
 	// discretising per data stream
 	musfibDiscretePosition := dh.DiscretiseVector(musfibPosition, bins, pos_min, pos_max)
 	musfibDiscreteVelocity := dh.DiscretiseVector(musfibVelocity, bins, vel_min, vel_max)
 	musfibDiscreteAcceleration := dh.DiscretiseVector(musfibAcceleration, bins, acc_min, acc_max)
 	musfibDiscreteAction := dh.DiscretiseVector(musfibAction, bins, -1.0, 1.0)
-	// musfibDiscreteSensor := dh.DiscretiseVector(musfibSensor, bins, sen_min, sen_max)
+	musfibDiscreteSensor := dh.DiscretiseVector(musfibSensor, bins, sen_min, sen_max)
 
 	muslinDiscretePosition := dh.DiscretiseVector(muslinPosition, bins, pos_min, pos_max)
 	muslinDiscreteVelocity := dh.DiscretiseVector(muslinVelocity, bins, vel_min, vel_max)
 	muslinDiscreteAcceleration := dh.DiscretiseVector(muslinAcceleration, bins, acc_min, acc_max)
 	muslinDiscreteAction := dh.DiscretiseVector(muslinAction, bins, -1.0, 1.0)
-	// muslinDiscreteSensor := dh.DiscretiseVector(muslinSensor, bins, sen_min, sen_max)
+	muslinDiscreteSensor := dh.DiscretiseVector(muslinSensor, bins, sen_min, sen_max)
 
 	dcmotDiscretePosition := dh.DiscretiseVector(dcmotPosition, bins, pos_min, pos_max)
 	dcmotDiscreteVelocity := dh.DiscretiseVector(dcmotVelocity, bins, vel_min, vel_max)
 	dcmotDiscreteAcceleration := dh.DiscretiseVector(dcmotAcceleration, bins, acc_min, acc_max)
 	dcmotDiscreteAction := dh.DiscretiseVector(dcmotAction, bins, act_min, act_max)
-	// dcmotDiscreteSensor := dh.Discretise(dcmotSensor, []int{bins, bins}, []float64{dc_pos_min, dc_vel_min}, []float64{dc_pos_max, dc_vel_max})
+	dcmotDiscreteSensor := dh.Discretise(dcmotSensor, []int{bins, bins}, []float64{dc_pos_min, dc_vel_min}, []float64{dc_pos_max, dc_vel_max})
 
 	// creating W data stream
 
@@ -104,48 +104,63 @@ func main() {
 	muslinA := dh.Relabel(muslinDiscreteAction)
 	dcmotA := dh.Relabel(dcmotDiscreteAction)
 
+	// create S container
+	musfibS := dh.Relabel(musfibDiscreteSensor)
+	muslinS := dh.Relabel(muslinDiscreteSensor)
+	dcmotS := dh.Relabel(dcmotDiscreteSensor)
+
 	// generate w2,w1,a1 data container
 
-	w2w1a1MusFib := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
-	w2w1a1MusLin := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
-	w2w1a1DcMot := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
+	w2w1s1a1MusFib := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
+	w2w1s1a1MusLin := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
+	w2w1s1a1DcMot := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
 
 	for row := 0; row < len(musfibDiscretePosition)-1; row++ {
-		w2w1a1MusFib[row] = make([]int, 3, 3)
-		w2w1a1MusFib[row][0] = musfibW[row+1]
-		w2w1a1MusFib[row][1] = musfibW[row]
-		w2w1a1MusFib[row][2] = musfibA[row]
+		w2w1s1a1MusFib[row] = make([]int, 3, 3)
+		w2w1s1a1MusFib[row][0] = musfibW[row+1]
+		w2w1s1a1MusFib[row][1] = musfibW[row]
+		w2w1s1a1MusFib[row][2] = musfibA[row]
 	}
 
 	for row := 0; row < len(muslinDiscretePosition)-1; row++ {
-		w2w1a1MusLin[row] = make([]int, 3, 3)
-		w2w1a1MusLin[row][0] = muslinW[row+1]
-		w2w1a1MusLin[row][1] = muslinW[row]
-		w2w1a1MusLin[row][2] = muslinA[row]
+		w2w1s1a1MusLin[row] = make([]int, 3, 3)
+		w2w1s1a1MusLin[row][0] = muslinW[row+1]
+		w2w1s1a1MusLin[row][1] = muslinW[row]
+		w2w1s1a1MusLin[row][2] = muslinA[row]
 	}
 
 	for row := 0; row < len(dcmotDiscretePosition)-1; row++ {
-		w2w1a1DcMot[row] = make([]int, 3, 3)
-		w2w1a1DcMot[row][0] = dcmotW[row+1]
-		w2w1a1DcMot[row][1] = dcmotW[row]
-		w2w1a1DcMot[row][2] = dcmotA[row]
+		w2w1s1a1DcMot[row] = make([]int, 3, 3)
+		w2w1s1a1DcMot[row][0] = dcmotW[row+1]
+		w2w1s1a1DcMot[row][1] = dcmotW[row]
+		w2w1s1a1DcMot[row][2] = dcmotA[row]
 	}
 
-	pw2w1a1MusFib := discrete.Emperical3D(w2w1a1MusFib)
-	pw2w1a1MusLin := discrete.Emperical3D(w2w1a1MusLin)
-	pw2w1a1DcMot := discrete.Emperical3D(w2w1a1DcMot)
+	pw2w1a1MusFib := discrete.Emperical3D(w2w1s1a1MusFib)
+	pw2w1a1MusLin := discrete.Emperical3D(w2w1s1a1MusLin)
+	pw2w1a1DcMot := discrete.Emperical3D(w2w1s1a1DcMot)
 
-	musFibMIW := discrete.MorphologicalComputationW(pw2w1a1MusFib)
-	musLinMIW := discrete.MorphologicalComputationW(pw2w1a1MusLin)
-	dcmotMIW := discrete.MorphologicalComputationW(pw2w1a1DcMot)
+	musFibMIW := discrete.MorphologicalComputationW(pw2w1s1a1MusFib)
+	musLinMIW := discrete.MorphologicalComputationW(pw2w1s1a1MusLin)
+	dcmotMIW := discrete.MorphologicalComputationW(pw2w1s1a1DcMot)
 
-	fmt.Println(fmt.Sprintf("MusFib MI_W (discrete): %f", musFibMIW))
-	fmt.Println(fmt.Sprintf("MusLin MI_W (discrete): %f", musLinMIW))
-	fmt.Println(fmt.Sprintf("DC-Mot MI_W (discrete): %f", dcmotMIW))
+	musFibMIMI := discrete.MorphologicalComputationMI(pw2w1s1a1MusFib)
+	musLinMIMI := discrete.MorphologicalComputationMI(pw2w1s1a1MusLin)
+	dcmotMIMI := discrete.MorphologicalComputationMI(pw2w1s1a1DcMot)
 
-	musFibMIWsd := dstate.MorphologicalComputationW(w2w1a1MusFib)
-	musLinMIWsd := dstate.MorphologicalComputationW(w2w1a1MusLin)
-	dcmotMIWsd := dstate.MorphologicalComputationW(w2w1a1DcMot)
+	fmt.Println(fmt.Sprintf("MusFib MI_W  (discrete): %f", musFibMIW))
+	fmt.Println(fmt.Sprintf("MusLin MI_W  (discrete): %f", musLinMIW))
+	fmt.Println(fmt.Sprintf("DC-Mot MI_W  (discrete): %f", dcmotMIW))
+	fmt.Println(fmt.Sprintf("MusFib MI_MI (discrete): %f", musFibMIMI))
+	fmt.Println(fmt.Sprintf("MusLin MI_MI (discrete): %f", musLinMIMI))
+	fmt.Println(fmt.Sprintf("DC-Mot MI_MI (discrete): %f", dcmotMIMI))
+
+	musFibMIWsd := dstate.MorphologicalComputationW(w2w1s1a1MusFib)
+	musLinMIWsd := dstate.MorphologicalComputationW(w2w1s1a1MusLin)
+	dcmotMIWsd := dstate.MorphologicalComputationW(w2w1s1a1DcMot)
+	musFibMIMIsd := dstate.MorphologicalComputationW(w2w1s1a1MusFib)
+	musLinMIMIsd := dstate.MorphologicalComputationW(w2w1s1a1MusLin)
+	dcmotMIMIsd := dstate.MorphologicalComputationW(w2w1s1a1DcMot)
 
 	f, err := os.Create("mi_w_averaged_results_discrete.csv")
 	defer f.Close()
@@ -156,10 +171,16 @@ func main() {
 	f.WriteString(fmt.Sprintf("MusFib MI_W (discrete): %f", musFibMIW))
 	f.WriteString(fmt.Sprintf("MusLin MI_W (discrete): %f", musLinMIW))
 	f.WriteString(fmt.Sprintf("DC-Mot MI_W (discrete): %f", dcmotMIW))
+	f.WriteString(fmt.Sprintf("MusFib MI_MI (discrete): %f", musFibMIMI))
+	f.WriteString(fmt.Sprintf("MusLin MI_MI (discrete): %f", musLinMIMI))
+	f.WriteString(fmt.Sprintf("DC-Mot MI_MI (discrete): %f", dcmotMIMI))
 
 	writeToCSV("musfib_mi_w_sd_discrete.csv", musFibMIWsd)
 	writeToCSV("muslin_mi_w_sd_discrete.csv", musLinMIWsd)
 	writeToCSV("dcmot_mi_w_sd_discrete.csv", dcmotMIWsd)
+	writeToCSV("musfib_mi_mi2_sd_discrete.csv", musFibMIMIsd)
+	writeToCSV("muslin_mi_mi2_sd_discrete.csv", musLinMIMIsd)
+	writeToCSV("dcmot_mi_mi2_sd_discrete.csv", dcmotMIMIsd)
 
 	////////////////////////////////////////////////////////////
 	// continuous
@@ -184,6 +205,14 @@ func main() {
 	musLinCMIWsd := cstate.MorphologicalComputationW(musLinC, w2Indices, w1Indices, a1Indices, k, true)
 	dcmotCMIWsd := cstate.MorphologicalComputationW(dcmotC, w2Indices, w1Indices, a1Indices, k, true)
 
+	musFibCMIMI2 := continuous.MorphologicalComputationMI2(musFibC, w2Indices, w1Indices, a1Indices, k, true)
+	musLinCMIMI2 := continuous.MorphologicalComputationMI2(musLinC, w2Indices, w1Indices, a1Indices, k, true)
+	dcmotCMIMI2 := continuous.MorphologicalComputationMI2(dcmotC, w2Indices, w1Indices, a1Indices, k, true)
+
+	musFibCMIMI2sd := cstate.MorphologicalComputationMI2(musFibC, w2Indices, w1Indices, a1Indices, k, true)
+	musLinCMIMI2sd := cstate.MorphologicalComputationMI2(musLinC, w2Indices, w1Indices, a1Indices, k, true)
+	dcmotCMIMI2sd := cstate.MorphologicalComputationMI2(dcmotC, w2Indices, w1Indices, a1Indices, k, true)
+
 	f, err = os.Create("mi_w_averaged_results_continuous.csv")
 	defer f.Close()
 	if err != nil {
@@ -193,14 +222,23 @@ func main() {
 	f.WriteString(fmt.Sprintf("MusFib MI_W: %f", musFibCMIW))
 	f.WriteString(fmt.Sprintf("MusLin MI_W: %f", musLinCMIW))
 	f.WriteString(fmt.Sprintf("DC-Mot MI_W: %f", dcmotCMIW))
+	f.WriteString(fmt.Sprintf("MusFib MI_MI2: %f", musFibCMIMI2))
+	f.WriteString(fmt.Sprintf("MusLin MI_MI2: %f", musLinCMIMI2))
+	f.WriteString(fmt.Sprintf("DC-Mot MI_MI2: %f", dcmotCMIMI2))
 
 	fmt.Println(fmt.Sprintf("MusFib MI_W (continuous): %f", musFibCMIW))
 	fmt.Println(fmt.Sprintf("MusLin MI_W (continuous): %f", musLinCMIW))
 	fmt.Println(fmt.Sprintf("DC-Mot MI_W (continuous): %f", dcmotCMIW))
+	fmt.Println(fmt.Sprintf("MusFib MI_MI2 (continuous): %f", musFibCMIMI2))
+	fmt.Println(fmt.Sprintf("MusLin MI_MI2 (continuous): %f", musLinCMIMI2))
+	fmt.Println(fmt.Sprintf("DC-Mot MI_MI2 (continuous): %f", dcmotCMIMI2))
 
 	writeToCSV("musfib_mi_w_sd_continuous.csv", musFibCMIWsd)
 	writeToCSV("muslin_mi_w_sd_continuous.csv", musLinCMIWsd)
 	writeToCSV("dcmot_mi_w_sd_continuous.csv", dcmotCMIWsd)
+	writeToCSV("musfib_mi_mi2_sd_continuous.csv", musFibCMIMI2sd)
+	writeToCSV("muslin_mi_mi2_sd_continuous.csv", musLinCMIMI2sd)
+	writeToCSV("dcmot_mi_mi2_sd_continuous.csv", dcmotCMIMI2sd)
 }
 
 func convertToString(d []float64) []string {

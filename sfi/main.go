@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"math/rand"
+	"os/exec"
 	"time"
 )
 
@@ -12,12 +12,14 @@ func main() {
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
 
-	if *cpus != 2 {
-		fmt.Println("woops")
+	for true {
+		// exec.Command("killall -9 firefox")
+		// exec.Command("killall -9 geckodriver")
+		// collectNewStartingPoints(*cpus)
+		exec.Command("killall -9 firefox")
+		exec.Command("killall -9 java")
+		exec.Command("killall -9 geckodriver")
+		collectReplyTrees(*cpus)
+		time.Sleep(10 * time.Hour)
 	}
-	// collectNewStartingPoints(*cpus)
-
-	// collectReplyTree("https://twitter.com/ArasBacho/status/1031661358444630020")
-	// collectReplyTree("https://twitter.com/tagesschau/status/1039884797999558656")
-	collectReplyTree("https://twitter.com/tagesschau/status/1039039489245687808")
 }

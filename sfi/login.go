@@ -33,7 +33,7 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	//	defer service.Stop()
 	f := firefox.Capabilities{}
 	f.Binary = "./bin/firefox"
-	// f.Args = []string{"--headless"}
+	f.Args = []string{"--headless"}
 
 	// Connect to the WebDriver instance running locally.
 	caps := selenium.Capabilities{"browserName": "firefox"}
@@ -55,6 +55,7 @@ func loginToTwitter(wd *selenium.WebDriver, loginFile string) {
 
 	login := findElementByCSS("input.js-username-field.email-input.js-initial-focus", wd)
 	if err := login.Clear(); err != nil {
+		fmt.Printf("Problems with login file %s\n", loginFile)
 		panic(err)
 	}
 

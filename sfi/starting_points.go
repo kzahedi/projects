@@ -15,35 +15,28 @@ func getNewStartingPoints(lst *[]string, account string) []string {
 	startingPointURL := fmt.Sprintf("https://twitter.com/%s", account)
 	openURL(startingPointURL, &wd)
 
-	found := false
-	for found == false {
+	stopLooking := false
+	for stopLooking == false {
 		wd.ExecuteScript("window.scrollTo(0, document.body.scrollHeight)", nil)
-		var r []string
+		var newlyCollected []string
 		tweets := findElementsByCSS("div.tweet", &wd)
 		for _, t := range tweets {
 			s, _ := t.GetAttribute("data-permalink-path")
-			r = append(r, fmt.Sprintf("https://twitter.com%s", s))
+			newlyCollected = append(newlyCollected, fmt.Sprintf("https://twitter.com%s", s))
 		}
-		for _, newURL := range r {
+
+		for _, newURL := range newlyCollected {
+			newFound := false
 			for _, oldURL := range *lst {
 				if newURL == oldURL {
-					found = true
-				} else {
-					if len(newTweets) == 0 {
-						newTweets = append(newTweets, newURL)
-					} else {
-						add := true
-						for _, url := range newTweets {
-							if newURL == url {
-								add = false
-								break
-							}
-						}
-						if add == true && len(newURL) > len("https://twitter.com") {
-							newTweets = append(newTweets, newURL)
-						}
-					}
+					newFound = true
+					break
 				}
+			}
+			if newFound == false && len(newURL) > 20 {
+				newTweets = append(newTweets, newURL)
+			} else {
+				stopLooking = true
 			}
 		}
 	}
@@ -96,6 +89,6 @@ func collectNewStartingPoints(cpus int) {
 
 	// newStartingPoints := getNewStartingPoints(&startingPoints, account)
 
-	startingPoints = append(startingPoints, newStartingPoints...)
-	writeListToFile(&startingPoints, "data/starting_points.txt")
+	// startingPoints = append(startingPoints, newStartingPoints...)
+	// writeListToFile(&startingPoints, "data/starting_points.txt")
 }

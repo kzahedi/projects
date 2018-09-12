@@ -36,7 +36,9 @@ func appendToFile(filename, text string) {
 
 	defer f.Close()
 
-	if _, err = f.WriteString(text); err != nil {
+	line := fmt.Sprintf("%s\n", text)
+
+	if _, err = f.WriteString(line); err != nil {
 		panic(err)
 	}
 }

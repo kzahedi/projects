@@ -2,19 +2,17 @@ package main
 
 import (
 	"fmt"
-	"time"
 )
 
 func getNewStartingPoints(lst *[]string, account string) []string {
-	var r []string
+	var newTweets []string
+
 	service, wd := randomLogin()
 	defer service.Stop()
 	defer wd.Close()
 
-	newURL := fmt.Sprintf("https://twitter.com/%s", account)
-	openURL(newURL, &wd)
-
-	var newTweets []string
+	startingPointURL := fmt.Sprintf("https://twitter.com/%s", account)
+	openURL(startingPointURL, &wd)
 
 	found := false
 	for found == false {
@@ -27,7 +25,6 @@ func getNewStartingPoints(lst *[]string, account string) []string {
 		}
 		for _, newURL := range r {
 			for _, oldURL := range *lst {
-				fmt.Printf("Comparing %s with %s\n", newURL, oldURL)
 				if newURL == oldURL {
 					found = true
 				} else {
@@ -41,7 +38,7 @@ func getNewStartingPoints(lst *[]string, account string) []string {
 								break
 							}
 						}
-						if add == true {
+						if add == true && len(newURL) > len("https://twitter.com") {
 							newTweets = append(newTweets, newURL)
 						}
 					}
@@ -50,9 +47,10 @@ func getNewStartingPoints(lst *[]string, account string) []string {
 		}
 	}
 
-	fmt.Println(newTweets)
+	err := wd.Quit()
+	if err != nil {
+		panic(err)
+	}
 
-	time.Sleep(30 * time.Second)
-
-	return r
+	return newTweets
 }

@@ -19,3 +19,6 @@ rbo/loop/loop
 sfi/selenium-server-standalone-3.8.1.jar
 sfi/geckodriver
 sfi/logins
+firefox-nightly
+bin
+sfi

@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"io/ioutil"
 	"math/rand"
-	"os"
 	"path/filepath"
 
 	"github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/firefox"
 )
 
 func openBrowser() (*selenium.Service, selenium.WebDriver) {
@@ -22,7 +22,8 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	opts := []selenium.ServiceOption{
 		// selenium.StartFrameBuffer(),           // Start an X frame buffer for the browser to run in.
 		selenium.GeckoDriver(geckoDriverPath), // Specify the path to GeckoDriver in order to use Firefox.
-		selenium.Output(os.Stderr),            // Output debug information to STDERR.
+		// selenium.Output(os.Stderr),            // Output debug information to
+		selenium.Output(ioutil.Discard), // Output debug information to STDERR.
 	}
 	selenium.SetDebug(false)
 	service, err := selenium.NewSeleniumService(seleniumPath, port, opts...)
@@ -30,9 +31,17 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 		panic(err) // panic is used only as an example and is not otherwise recommended.
 	}
 	//	defer service.Stop()
+	f := firefox.Capabilities{}
+	f.Binary = "./bin/firefox"
+	f.Args = []string{"--headless"}
+	// f.Log = &firefox.Log{
+	// 	Level: firefox.Error,
+	// }
 
 	// Connect to the WebDriver instance running locally.
 	caps := selenium.Capabilities{"browserName": "firefox"}
+	caps.AddFirefox(f)
+
 	wd, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
 	if err != nil {
 		panic(err)
@@ -67,7 +76,7 @@ func loginToTwitter(wd *selenium.WebDriver, loginFile string) {
 func getLoginFile() string {
 	files, err := filepath.Glob("logins/login*.txt")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	return files[rand.Intn(len(files))]

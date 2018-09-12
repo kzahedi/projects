@@ -28,7 +28,29 @@ func writeListToFile(list *[]string, filename string) {
 	}
 }
 
+func appendToFile(filename, text string) {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(text); err != nil {
+		panic(err)
+	}
+}
+
 func getLoginPassword(file string) (string, string) {
 	lines := readFileToList(file)
 	return lines[0], lines[1]
+}
+
+func writeBytesToFile(filename string, bytes []byte) {
+	f, err := os.Create(filename)
+	defer f.Close()
+	if err != nil {
+		panic(err)
+	}
+	f.Write(bytes)
 }

@@ -33,10 +33,7 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	//	defer service.Stop()
 	f := firefox.Capabilities{}
 	f.Binary = "./bin/firefox"
-	f.Args = []string{"--headless"}
-	// f.Log = &firefox.Log{
-	// 	Level: firefox.Error,
-	// }
+	// f.Args = []string{"--headless"}
 
 	// Connect to the WebDriver instance running locally.
 	caps := selenium.Capabilities{"browserName": "firefox"}

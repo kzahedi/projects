@@ -111,69 +111,42 @@ func main() {
 
 	// generate w2,w1,a1 data container
 
-	w2w1s1a1MusFib := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
-	w2w1s1a1MusLin := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
-	w2w1s1a1DcMot := make([][]int, len(musfibDiscretePosition)-1, len(musfibDiscretePosition)-1)
+	musfibSD, musfibAvg := calculateMIMI(musfibW, musfibS, musfibA)
+	muslinSD, muslinAvg := calculateMIMI(muslinW, muslinS, muslinA)
+	dcmotSD, dcmotAvg := calculateMIMI(dcmotW, dcmotS, dcmotA)
 
-	for row := 0; row < len(musfibDiscretePosition)-1; row++ {
-		w2w1s1a1MusFib[row] = make([]int, 3, 3)
-		w2w1s1a1MusFib[row][0] = musfibW[row+1]
-		w2w1s1a1MusFib[row][1] = musfibW[row]
-		w2w1s1a1MusFib[row][2] = musfibA[row]
+	f.WriteString(fmt.Sprintf("MusFib MI_MI (discrete): %f", musfibAvg))
+	f.WriteString(fmt.Sprintf("MusLin MI_MI (discrete): %f", muslinAvg))
+	f.WriteString(fmt.Sprintf("DC-Mot MI_MI (discrete): %f", dcmotAvg))
+
+}
+
+func calculateMIMI(w, s, a []int) []float64, float64 {
+
+	w2w1s1a1:= make([][]int, len(w)-1, len(w)-1)
+
+	for row := 0; row < len(w)-1; row++ {
+		w2w1s1a1[row] = make([]int, 3, 3)
+		w2w1s1a1[row][0] = musfibW[row+1]
+		w2w1s1a1[row][1] = musfibW[row]
+		w2w1s1a1[row][2] = musfibA[row]
+		w2w1s1a1[row][3] = musfibS[row]
 	}
 
-	for row := 0; row < len(muslinDiscretePosition)-1; row++ {
-		w2w1s1a1MusLin[row] = make([]int, 3, 3)
-		w2w1s1a1MusLin[row][0] = muslinW[row+1]
-		w2w1s1a1MusLin[row][1] = muslinW[row]
-		w2w1s1a1MusLin[row][2] = muslinA[row]
-	}
+	pw2w1s1a1 := discrete.Emperical3D(w2w1s1a1)
 
-	for row := 0; row < len(dcmotDiscretePosition)-1; row++ {
-		w2w1s1a1DcMot[row] = make([]int, 3, 3)
-		w2w1s1a1DcMot[row][0] = dcmotW[row+1]
-		w2w1s1a1DcMot[row][1] = dcmotW[row]
-		w2w1s1a1DcMot[row][2] = dcmotA[row]
-	}
 
-	pw2w1a1MusFib := discrete.Emperical3D(w2w1s1a1MusFib)
-	pw2w1a1MusLin := discrete.Emperical3D(w2w1s1a1MusLin)
-	pw2w1a1DcMot := discrete.Emperical3D(w2w1s1a1DcMot)
-
-	musFibMIW := discrete.MorphologicalComputationW(pw2w1s1a1MusFib)
-	musLinMIW := discrete.MorphologicalComputationW(pw2w1s1a1MusLin)
-	dcmotMIW := discrete.MorphologicalComputationW(pw2w1s1a1DcMot)
-
-	musFibMIMI := discrete.MorphologicalComputationMI(pw2w1s1a1MusFib)
-	musLinMIMI := discrete.MorphologicalComputationMI(pw2w1s1a1MusLin)
-	dcmotMIMI := discrete.MorphologicalComputationMI(pw2w1s1a1DcMot)
-
-	fmt.Println(fmt.Sprintf("MusFib MI_W  (discrete): %f", musFibMIW))
-	fmt.Println(fmt.Sprintf("MusLin MI_W  (discrete): %f", musLinMIW))
-	fmt.Println(fmt.Sprintf("DC-Mot MI_W  (discrete): %f", dcmotMIW))
-	fmt.Println(fmt.Sprintf("MusFib MI_MI (discrete): %f", musFibMIMI))
-	fmt.Println(fmt.Sprintf("MusLin MI_MI (discrete): %f", musLinMIMI))
-	fmt.Println(fmt.Sprintf("DC-Mot MI_MI (discrete): %f", dcmotMIMI))
+	mimi := discrete.MorphologicalComputationMI(pw2w1s1a1MusFib)
 
 	musFibMIWsd := dstate.MorphologicalComputationW(w2w1s1a1MusFib)
-	musLinMIWsd := dstate.MorphologicalComputationW(w2w1s1a1MusLin)
-	dcmotMIWsd := dstate.MorphologicalComputationW(w2w1s1a1DcMot)
-	musFibMIMIsd := dstate.MorphologicalComputationW(w2w1s1a1MusFib)
-	musLinMIMIsd := dstate.MorphologicalComputationW(w2w1s1a1MusLin)
-	dcmotMIMIsd := dstate.MorphologicalComputationW(w2w1s1a1DcMot)
 
 	f, err := os.Create("mi_w_averaged_results_discrete.csv")
 	defer f.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	f.WriteString(fmt.Sprintf("MusFib MI_W (discrete): %f", musFibMIW))
-	f.WriteString(fmt.Sprintf("MusLin MI_W (discrete): %f", musLinMIW))
-	f.WriteString(fmt.Sprintf("DC-Mot MI_W (discrete): %f", dcmotMIW))
-	f.WriteString(fmt.Sprintf("MusFib MI_MI (discrete): %f", musFibMIMI))
-	f.WriteString(fmt.Sprintf("MusLin MI_MI (discrete): %f", musLinMIMI))
-	f.WriteString(fmt.Sprintf("DC-Mot MI_MI (discrete): %f", dcmotMIMI))
 
 	writeToCSV("musfib_mi_w_sd_discrete.csv", musFibMIWsd)
 	writeToCSV("muslin_mi_w_sd_discrete.csv", musLinMIWsd)

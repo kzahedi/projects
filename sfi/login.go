@@ -5,21 +5,24 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"path/filepath"
+	"runtime"
 
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
+	"github.com/tebeka/selenium/firefox"
 )
 
 func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	// Start a Selenium WebDriver server instance (if one is not already
 	// running).
-	const (
-		// These paths will be different on your system.
-		seleniumPath = "selenium-server-standalone-3.8.1.jar"
-		// geckoDriverPath = "geckodriver"
+	var geckoDriverPath string
+	if runtime.GOOS == "darwin" {
 		geckoDriverPath = "/usr/local/Cellar/geckodriver/0.21.0/bin/geckodriver"
-		port            = 8080
-	)
+	} else {
+		geckoDriverPath = "geckodriver"
+	}
+	seleniumPath := "selenium-server-standalone-3.8.1.jar"
+	port := 8080
 	opts := []selenium.ServiceOption{
 		// selenium.StartFrameBuffer(),           // Start an X frame buffer for the browser to run in.
 		selenium.GeckoDriver(geckoDriverPath), // Specify the path to GeckoDriver in order to use Firefox.
@@ -31,27 +34,35 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	if err != nil {
 		panic(err) // panic is used only as an example and is not otherwise recommended.
 	}
-	//	defer service.Stop()
-	// f := firefox.Capabilities{}
-	// f.Binary = "./bin/firefox"
-	// f.Binary = "/Applications/Firefox.app/Contents/MacOS/firefox"
-	// f.Args = []string{"--headless"}
-	// caps := selenium.Capabilities{"browserName": "firefox"}
-	// caps.AddFirefox(f)
 
-	c := chrome.Capabilities{}
-	// c.Args = []string{"--headless"}
-	caps := selenium.Capabilities{"browserName": "chime"}
-	caps.AddChrome(c)
+	var wd selenium.WebDriver
 
-	// Connect to the WebDriver instance running locally.
+	if runtime.GOOS == "darwin" {
+		c := chrome.Capabilities{}
+		c.Args = []string{"--headless"}
+		caps := selenium.Capabilities{"browserName": "chrome"}
+		caps.AddChrome(c)
 
-	wd, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
-	if err != nil {
-		panic(err)
+		// Connect to the WebDriver instance running locally.
+
+		wd, err = selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		f := firefox.Capabilities{}
+		f.Binary = "./bin/firefox"
+		f.Args = []string{"--headless"}
+		caps := selenium.Capabilities{"browserName": "firefox"}
+		caps.AddFirefox(f)
+
+		wd, err = selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
+		if err != nil {
+			panic(err)
+		}
 	}
+
 	return service, wd
-	// defer wd.Quit()
 }
 
 func loginToTwitter(wd *selenium.WebDriver, loginFile string) {
@@ -60,7 +71,7 @@ func loginToTwitter(wd *selenium.WebDriver, loginFile string) {
 
 	openURL("https://twitter.com/login", wd)
 
-	login := findElementByCSS("input.js-username-field.email-input.js-initial-focus", wd)
+	login := findElementByCSS("input.js-username-field", wd)
 	if err := login.Clear(); err != nil {
 		fmt.Printf("Problems with login file %s\n", loginFile)
 		panic(err)

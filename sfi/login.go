@@ -39,7 +39,7 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 
 	if runtime.GOOS == "darwin" {
 		c := chrome.Capabilities{}
-		c.Args = []string{"--headless"}
+		// c.Args = []string{"--headless"}
 		caps := selenium.Capabilities{"browserName": "chrome"}
 		caps.AddChrome(c)
 

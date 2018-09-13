@@ -15,4 +15,6 @@ func main() {
 		collectReplyTrees(*cpus)
 		time.Sleep(10 * time.Hour)
 	}
+
+	// collectReplyTree([]string{"https://twitter.com/ZDFheute/status/1039600533999439873"})
 }

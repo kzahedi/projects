@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -55,4 +56,12 @@ func writeBytesToFile(filename string, bytes []byte) {
 		panic(err)
 	}
 	f.Write(bytes)
+}
+
+func readDirContent(pattern string) []string {
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		panic(err)
+	}
+	return files
 }

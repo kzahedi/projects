@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/tebeka/selenium"
-	"github.com/tebeka/selenium/firefox"
+	"github.com/tebeka/selenium/chrome"
 )
 
 func openBrowser() (*selenium.Service, selenium.WebDriver) {
@@ -15,8 +15,9 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	// running).
 	const (
 		// These paths will be different on your system.
-		seleniumPath    = "selenium-server-standalone-3.8.1.jar"
-		geckoDriverPath = "geckodriver"
+		seleniumPath = "selenium-server-standalone-3.8.1.jar"
+		// geckoDriverPath = "geckodriver"
+		geckoDriverPath = "/usr/local/Cellar/geckodriver/0.21.0/bin/geckodriver"
 		port            = 8080
 	)
 	opts := []selenium.ServiceOption{
@@ -31,13 +32,19 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 		panic(err) // panic is used only as an example and is not otherwise recommended.
 	}
 	//	defer service.Stop()
-	f := firefox.Capabilities{}
-	f.Binary = "./bin/firefox"
-	f.Args = []string{"--headless"}
+	// f := firefox.Capabilities{}
+	// f.Binary = "./bin/firefox"
+	// f.Binary = "/Applications/Firefox.app/Contents/MacOS/firefox"
+	// f.Args = []string{"--headless"}
+	// caps := selenium.Capabilities{"browserName": "firefox"}
+	// caps.AddFirefox(f)
+
+	c := chrome.Capabilities{}
+	// c.Args = []string{"--headless"}
+	caps := selenium.Capabilities{"browserName": "chime"}
+	caps.AddChrome(c)
 
 	// Connect to the WebDriver instance running locally.
-	caps := selenium.Capabilities{"browserName": "firefox"}
-	caps.AddFirefox(f)
 
 	wd, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", port))
 	if err != nil {

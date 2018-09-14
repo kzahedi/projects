@@ -1,20 +1,17 @@
 package main
 
-import (
-	"flag"
-	"math/rand"
-	"time"
-)
+import "os"
 
 func main() {
-	cpus := flag.Int("cpu", 2, "CPUS")
-	flag.Parse()
-	rand.Seed(time.Now().Unix())
-	for true {
-		// collectNewStartingPoints(*cpus)
-		collectReplyTrees(*cpus)
-		time.Sleep(10 * time.Hour)
-	}
+	// cpus := flag.Int("cpu", 2, "CPUS")
+	// flag.Parse()
+	// rand.Seed(time.Now().Unix())
+	// for true {
+	// 	// collectNewStartingPoints(*cpus)
+	// 	collectReplyTrees(*cpus)
+	// 	time.Sleep(10 * time.Hour)
+	// }
 
-	// collectReplyTree([]string{"https://twitter.com/ZDFheute/status/1039600533999439873"})
+	os.Remove("data/912805085402550273.json")
+	collectReplyTree([]string{"https://twitter.com/MartinaRenner/status/1039261599012450305"})
 }

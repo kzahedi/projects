@@ -21,7 +21,7 @@ func findElementByCSS(id string, wd *selenium.WebDriver) selenium.WebElement {
 func findChildElementByCSS(id string, we selenium.WebElement) selenium.WebElement {
 	elem, err := we.FindElement(selenium.ByCSSSelector, id)
 	if err != nil {
-		return nil
+		panic(err)
 	}
 	return elem
 }

@@ -15,60 +15,6 @@ import (
 
 var id int
 
-// Tweet contains the tree
-type Tweet struct {
-	ID            int
-	ParentID      int
-	Name          string
-	TwitterHandle string
-	Text          string
-	Date          string
-	Replies       int
-	Retweets      int
-	Likes         int
-	Link          string
-	Type          string
-	Mentions      []string
-	Children      []Tweet
-}
-
-func makeTweet() Tweet {
-	return Tweet{ID: -1,
-		Name:          "",
-		TwitterHandle: "",
-		Type:          "",
-		Text:          "",
-		Date:          "",
-		Link:          "",
-		Replies:       0,
-		Retweets:      0,
-		Likes:         0,
-		Children:      nil,
-		ParentID:      -1,
-		Mentions:      make([]string, 0, 0),
-	}
-}
-
-func (t Tweet) String() string {
-	s := ""
-	s = fmt.Sprintf("%sName: %s\n", s, t.Name)
-	s = fmt.Sprintf("%sTwitter Handle: %s\n", s, t.TwitterHandle)
-	s = fmt.Sprintf("%sText: \"%s\"\n", s, t.Text)
-	s = fmt.Sprintf("%sReplies: %d\n", s, t.Replies)
-	s = fmt.Sprintf("%sLikes: %d\n", s, t.Likes)
-	s = fmt.Sprintf("%sRetweets: %d\n", s, t.Retweets)
-	s = fmt.Sprintf("%sParent: %d\n", s, t.ParentID)
-	s = fmt.Sprintf("%sID: %d\n", s, t.ID)
-	s = fmt.Sprintf("%sMentions:\n", s)
-	for _, v := range t.Mentions {
-		s = fmt.Sprintf("%s  %s\n", s, v)
-	}
-	for _, t := range t.Children {
-		s = fmt.Sprintf("%s%s", s, t)
-	}
-	return s
-}
-
 func countThreads(wd *selenium.WebDriver) int {
 	return len(findElementsByCSS("li.ThreadedConversation", wd)) +
 		len(findElementsByCSS("li.ThreadedConversation--loneTweet", wd))
@@ -112,110 +58,87 @@ func openMoreReplies(wd *selenium.WebDriver) {
 	}
 }
 
-func extractTweetInfo(tweet *Tweet, wd *selenium.WebDriver) bool {
-	accountNode := findElementByCSS("div.tweet.permalink-tweet", wd)
-	if accountNode == nil {
-		return false
+func getThreadEntry(we selenium.WebElement, rootNode bool) (Tweet, bool) {
+	tweet := makeTweet()
+	element := findChildElementByCSS("div.tweet", we)
+	class, _ := element.GetAttribute("class")
+	if strings.Contains(class, "withheld-tweet") {
+		return tweet, false
 	}
 
-	name, _ := accountNode.GetAttribute("data-name")
-	handle, _ := accountNode.GetAttribute("data-screen-name")
-	mentions, _ := accountNode.GetAttribute("data-mentions")
+	tweet.Link, _ = element.GetAttribute("data-permalink-path")
+	mentions, _ := element.GetAttribute("data-mentions")
+	name, _ := element.GetAttribute("data-name")
+	handle, _ := element.GetAttribute("data-screen-name")
+	userIDStr, _ := element.GetAttribute("data-user-id")
+	linkStr, _ := element.GetAttribute("data-permalink-path")
+	userID, _ := strconv.ParseInt(userIDStr, 10, 64)
+
+	var date string
+	if rootNode == true {
+		dateRoot := findChildElementByCSS("span.metadata", we)
+		date, _ = dateRoot.Text()
+	} else {
+		dateRoot := findChildElementByCSS("a.tweet-timestamp", element)
+		date, _ = dateRoot.GetAttribute("data-original-title")
+	}
 
 	var text string
-	textNode := findChildElementByCSS("p.TweetTextSize", accountNode)
+	textNode := findChildElementByCSS("p.TweetTextSize", we)
 	if textNode != nil {
 		text, _ = textNode.Text()
 	}
 
-	var nReplies int64
-	repliesRoot := findChildElementByCSS("div.ProfileTweet-action.ProfileTweet-action--reply", accountNode)
-	if repliesRoot != nil {
-		repliesNode := findChildElementByCSS("span.ProfileTweet-actionCountForPresentation", repliesRoot)
-		if repliesNode != nil {
-			replies, _ := repliesNode.Text()
-			nReplies, _ = strconv.ParseInt(replies, 10, 64)
-		}
-	}
+	footer := findChildElementByCSS("div.stream-item-footer", we)
 
-	var nLikes int64
-	likesRoot := findChildElementByCSS("div.ProfileTweet-action.ProfileTweet-action--favorite.js-toggleState", accountNode)
-	if likesRoot != nil {
-		likesNode := findChildElementByCSS("span.ProfileTweet-actionCountForPresentation", likesRoot)
-		if likesNode != nil {
-			likes, _ := likesNode.Text()
-			nLikes, _ = strconv.ParseInt(likes, 10, 64)
-		}
-	}
+	replyNode := findChildElementByCSS("div.ProfileTweet-action.ProfileTweet-action--reply", footer)
+	replyNrNode := findChildElementByCSS("span.ProfileTweet-actionCountForPresentation", replyNode)
+	replyStr, _ := replyNrNode.Text()
+	nReplies, _ := strconv.ParseInt(replyStr, 10, 64)
 
-	var nRetweets int64
-	retweetsRoot := findChildElementByCSS("div.ProfileTweet-action.ProfileTweet-action--retweet.js-toggleState.js-toggleRt", accountNode)
-	if retweetsRoot != nil {
-		retweetsNode := findChildElementByCSS("span.ProfileTweet-actionCountForPresentation", retweetsRoot)
-		if retweetsNode != nil {
-			retweets, _ := retweetsNode.Text()
-			nRetweets, _ = strconv.ParseInt(retweets, 10, 64)
-		}
-	}
+	retweetNode := findChildElementByCSS("div.ProfileTweet-action.ProfileTweet-action--retweet.js-toggleState.js-toggleRt", footer)
+	retweetNrNode := findChildElementByCSS("span.ProfileTweet-actionCountForPresentation", retweetNode)
+	retweetStr, _ := retweetNrNode.Text()
+	nRetweets, _ := strconv.ParseInt(retweetStr, 10, 64)
 
-	date := ""
-	dateRoot := findChildElementByCSS("span.metadata", accountNode)
-	if dateRoot != nil {
-		dateRoot = findChildElementByCSS("span", dateRoot)
-		date, _ = dateRoot.Text()
-	}
+	likesNode := findChildElementByCSS("div.ProfileTweet-action.ProfileTweet-action--favorite.js-toggleState", footer)
+	likesNrNode := findChildElementByCSS("span.ProfileTweet-actionCountForPresentation", likesNode)
+	likesStr, _ := likesNrNode.Text()
+	nLikes, _ := strconv.ParseInt(likesStr, 10, 64)
 
-	linkRoot := findChildElementByCSS("div.tweet.js-stream-tweet.js-actionable-tweet.js-profile-popup-actionable.dismissible-content.descendant.permalink-descendant-tweet", accountNode)
-	linkStr := ""
-	if linkRoot != nil {
-		linkStr, _ = linkRoot.GetAttribute("data-permalink-path")
-		linkStr = fmt.Sprintf("https://twitter.com%s", linkStr)
-	}
-
-	// fmt.Printf("found link %s\n", linkStr)
-
+	tweet.Mentions = strings.Split(mentions, " ")
 	tweet.Name = name
 	tweet.TwitterHandle = handle
 	tweet.Mentions = strings.Split(mentions, " ")
+	tweet.Text = text
+	tweet.TwitterID = int(userID)
+	tweet.Link = fmt.Sprintf("https://twitter.com%s", linkStr)
+	tweet.Date = date
 	tweet.Likes = int(nLikes)
 	tweet.Retweets = int(nRetweets)
 	tweet.Replies = int(nReplies)
-	tweet.Text = text
-	tweet.Link = linkStr
-	tweet.Date = date
-	return true
+
+	fmt.Println(tweet.TwitterHandle)
+
+	return tweet, true
 }
 
-func getChildren(tweet Tweet, wd *selenium.WebDriver) []Tweet {
+func getChildren(root Tweet, wd *selenium.WebDriver) []Tweet {
 	var tweets []Tweet
 	scrollAllTheWay(wd)
 
-	list := findElementsByCSS("li.ThreadedConversation", wd)
-	for _, thread := range list {
-		threadTweets := findChildElementsByCSS("div.ThreadedConversation-tweet", thread)
-		first := threadTweets[0]
-		tweetInfo := findChildElementByCSS("div.tweet.js-stream-tweet", first)
-		t := makeTweet()
-		t.ID = id
-		t.ParentID = tweet.ID
-		str, _ := tweetInfo.GetAttribute("data-permalink-path")
-		t.Link = fmt.Sprintf("https://twitter.com%s", str)
-		id++
-		tweets = append(tweets, t)
+	li := findElementsByCSS("li", wd)
+	for _, element := range li {
+		class, _ := element.GetAttribute("class")
+		if strings.Contains(class, "ThreadedConversation") == true &&
+			strings.Contains(class, "moreReplies") == false {
+			tweet, r := getThreadEntry(element, false)
+			if r == true {
+				tweets = append(tweets, tweet)
+			}
+		}
 	}
 
-	singletons := findElementsByCSS("li.ThreadedConversation--loneTweet", wd)
-
-	for _, singleton := range singletons {
-		tweetInfo := findChildElementByCSS("div.tweet.js-stream-tweet", singleton)
-		t := makeTweet()
-		t.ID = id
-		t.ParentID = tweet.ID
-		str, _ := tweetInfo.GetAttribute("data-permalink-path")
-		t.Link = fmt.Sprintf("https://twitter.com%s", str)
-		id++
-		tweets = append(tweets, t)
-	}
 	return tweets
 }
 
@@ -223,7 +146,6 @@ func parseTree(node Tweet, wd *selenium.WebDriver) Tweet {
 	var kids []Tweet
 	for _, child := range node.Children {
 		(*wd).Get(child.Link)
-		extractTweetInfo(&child, wd)
 		child.Children = getChildren(child, wd)
 		child = parseTree(child, wd)
 		kids = append(kids, child)
@@ -276,17 +198,15 @@ func collectReplyTree(urls []string) []string {
 			continue
 		}
 
-		root := makeTweet()
-		r := extractTweetInfo(&root, &wd)
-		if r == false {
-			fmt.Printf("Url %s has a problem\n", url)
+		we := findElementByCSS("div.permalink-inner.permalink-tweet-container", &wd)
+		root, _ := getThreadEntry(we, true)
+
+		if checkTime(root.Date) == false {
+			fmt.Printf("The tweet %s is not 48 hours old: %s.\n", url, root.Date)
 			continue
 		}
 
-		if checkTime(root.Date) == false {
-			fmt.Printf("The tweet %s is not 48 hours old.\n", url)
-			continue
-		}
+		root.Children = getChildren(root, &wd)
 
 		id = 0
 		root.ID = 0
@@ -307,7 +227,7 @@ func collectReplyTree(urls []string) []string {
 }
 
 func collectReplyTrees(cpus int) {
-	spFile := readFileToList("data/starting_points.txt")
+	spFile := readFileToList("watch/starting_points.txt")
 	jsonFiles := readDirContent("data/*.json")
 
 	var startingPoints []string

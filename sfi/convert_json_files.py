@@ -68,7 +68,6 @@ def processFile(f,n):
 
     g.add_vertices(max+1)
     g.add_edges(edges)
-    # g.vs["label"] = vNames
     layout = g.layout_fruchterman_reingold(maxiter=10000)
     colours = [colour_dict[name] for name in vNames]
     visual_style = dict()
@@ -87,6 +86,6 @@ def processFile(f,n):
 
     print(out)
 
-files = glob.glob("data/*.json")
+files = glob.glob("sfi/data/*.json")
 for f in files:
-    processFile(f)
+    processFile(f, 1)

@@ -1,0 +1,40 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "go sfi",
+            "type": "shell",
+            "command": "go run *.go",
+            "options": {
+                "cwd": "${workspaceFolder}/sfi"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "kill chrome",
+            "type": "shell",
+            "command": "ps ax | grep hrome | cut -c1-6 | xargs kill -9",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "build sfi linux",
+            "type": "shell",
+            "command": "env GOOS=linux GOARCH=amd64 go build",
+            "options": {
+                "cwd": "${workspaceFolder}/sf"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+    ]
+}

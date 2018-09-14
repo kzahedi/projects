@@ -21,4 +21,8 @@ sfi/geckodriver
 sfi/logins
 firefox-nightly
 bin
-sfi
+sfi/pdfs/*.pdf
+sfi/data/*.json
+sfi/data/*.pdf
+*.pyc
+*.pdf

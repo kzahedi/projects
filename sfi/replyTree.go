@@ -117,6 +117,8 @@ func getThreadEntry(we selenium.WebElement, rootNode bool) (Tweet, bool) {
 	tweet.Likes = int(nLikes)
 	tweet.Retweets = int(nRetweets)
 	tweet.Replies = int(nReplies)
+	id++
+	tweet.ID = id
 
 	return tweet, true
 }
@@ -146,6 +148,7 @@ func getChildren(root Tweet, wd *selenium.WebDriver) []Tweet {
 func parseTree(node Tweet, wd *selenium.WebDriver) Tweet {
 	var kids []Tweet
 	for _, child := range node.Children {
+		child.ParentID = node.ID
 		if child.Lone == false {
 			(*wd).Get(child.Link)
 			child.Children = getChildren(child, wd)
@@ -213,8 +216,9 @@ func collectReplyTree(urls []string) []string {
 		root.Children = getChildren(root, &wd)
 
 		id = 0
-		root.ID = 0
 		root.Children = getChildren(root, &wd)
+		root.ID = 0
+		root.ParentID = 0
 		root.Link = url
 		root = parseTree(root, &wd)
 

@@ -13,16 +13,13 @@ vNames = []
 
 def collectData(node):
     global edges
-    global eid
     global vNames
     if node['Children'] == None:
         return
 
     vNames.append(node['TwitterHandle'])
-    name = eid
     for x in node['Children']:
-        eid = eid +1
-        edges.append((name, eid))
+        edges.append((x['ParentID'], x['ID']))
         vNames.append(x['TwitterHandle'])
 
     for x in node['Children']:
@@ -32,7 +29,6 @@ def collectData(node):
 def processFile(f,n):
     global edges
     global vNames
-    global eid
     random.seed()
     out = f.replace(".json",".pdf")
     out = out.replace("data","pdfs")
@@ -42,7 +38,6 @@ def processFile(f,n):
 
     edges = []
     vNames = []
-    eid = 0
     collectData(obj)
 
     uniqueNames = list(set(vNames))
@@ -54,7 +49,7 @@ def processFile(f,n):
         b = random.randint(0,255)
         colour_dict[n] = "rgb(" + str(r) + ", " + str(g) + ", " + str(b) + ")"
 
-    if len(edges) < 10:
+    if len(edges) < 5:
         return
 
     max = 0
@@ -86,6 +81,8 @@ def processFile(f,n):
 
     print(out)
 
-files = glob.glob("sfi/data/*.json")
-for f in files:
-    processFile(f, 1)
+# files = glob.glob("sfi/data/*.json")
+# for f in files:
+#     processFile(f, 1)
+
+processFile("sfi/data/1039261599012450305.json", 1)

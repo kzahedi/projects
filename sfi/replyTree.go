@@ -118,8 +118,6 @@ func getThreadEntry(we selenium.WebElement, rootNode bool) (Tweet, bool) {
 	tweet.Retweets = int(nRetweets)
 	tweet.Replies = int(nReplies)
 
-	fmt.Println(tweet.TwitterHandle)
-
 	return tweet, true
 }
 
@@ -133,6 +131,9 @@ func getChildren(root Tweet, wd *selenium.WebDriver) []Tweet {
 		if strings.Contains(class, "ThreadedConversation") == true &&
 			strings.Contains(class, "moreReplies") == false {
 			tweet, r := getThreadEntry(element, false)
+			if strings.Contains(class, "loneTweet") == true {
+				tweet.Lone = true
+			}
 			if r == true {
 				tweets = append(tweets, tweet)
 			}
@@ -145,9 +146,11 @@ func getChildren(root Tweet, wd *selenium.WebDriver) []Tweet {
 func parseTree(node Tweet, wd *selenium.WebDriver) Tweet {
 	var kids []Tweet
 	for _, child := range node.Children {
-		(*wd).Get(child.Link)
-		child.Children = getChildren(child, wd)
-		child = parseTree(child, wd)
+		if child.Lone == false {
+			(*wd).Get(child.Link)
+			child.Children = getChildren(child, wd)
+			child = parseTree(child, wd)
+		}
 		kids = append(kids, child)
 	}
 	node.Children = kids
@@ -189,6 +192,7 @@ func collectReplyTree(urls []string) []string {
 
 		if _, err := os.Stat(filename); err == nil {
 			fmt.Printf("File %s already exists\n", filename)
+			continue
 		}
 
 		openURL(url, &wd)

@@ -15,6 +15,7 @@ type Tweet struct {
 	Likes         int
 	TwitterID     int
 	Link          string
+	Lone          bool
 	Type          string
 	Mentions      []string
 	Children      []Tweet
@@ -34,6 +35,7 @@ func makeTweet() Tweet {
 		TwitterID:     0,
 		Children:      nil,
 		ParentID:      -1,
+		Lone:          false,
 		Mentions:      make([]string, 0, 0),
 	}
 }
@@ -49,6 +51,7 @@ func (t Tweet) String() string {
 	s = fmt.Sprintf("%sParent: %d\n", s, t.ParentID)
 	s = fmt.Sprintf("%sID: %d\n", s, t.ID)
 	s = fmt.Sprintf("%sTwitter ID: %d\n", s, t.TwitterID)
+	s = fmt.Sprintf("%Lone: %b\n", s, t.Lone)
 	s = fmt.Sprintf("%sMentions:\n", s)
 	for _, v := range t.Mentions {
 		s = fmt.Sprintf("%s  %s\n", s, v)

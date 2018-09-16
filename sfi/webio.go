@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"github.com/tebeka/selenium"
 )
 
 func openURL(url string, wd *selenium.WebDriver) {
 	if err := (*wd).Get(url); err != nil {
+		fmt.Printf("\"%s\"\n", url)
 		panic(err)
 	}
 }

@@ -4,6 +4,7 @@
 		"dateutil",
 		"dismissible",
 		"dtype",
+		"functools",
 		"numpy",
 		"retweets",
 		"ufunc"

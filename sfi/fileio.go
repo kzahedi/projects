@@ -24,8 +24,9 @@ func writeListToFile(list *[]string, filename string) {
 		panic(err)
 	}
 
-	for _, s := range *list {
-		f.WriteString(fmt.Sprintf("%s\n", s))
+	f.WriteString(fmt.Sprintf("%s", (*list)[0]))
+	for i := 1; i < len(*list); i++ {
+		f.WriteString(fmt.Sprintf("\n%s", (*list)[i]))
 	}
 }
 

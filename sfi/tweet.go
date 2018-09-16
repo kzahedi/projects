@@ -51,7 +51,7 @@ func (t Tweet) String() string {
 	s = fmt.Sprintf("%sParent: %d\n", s, t.ParentID)
 	s = fmt.Sprintf("%sID: %d\n", s, t.ID)
 	s = fmt.Sprintf("%sTwitter ID: %d\n", s, t.TwitterID)
-	s = fmt.Sprintf("%Lone: %b\n", s, t.Lone)
+	s = fmt.Sprintf("%sLone: %t\n", s, t.Lone)
 	s = fmt.Sprintf("%sMentions:\n", s)
 	for _, v := range t.Mentions {
 		s = fmt.Sprintf("%s  %s\n", s, v)

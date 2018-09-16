@@ -67,12 +67,16 @@ func contains(entry string, lst []string) bool {
 
 func getAllStartingPoints(lst []string, accounts []string) []string {
 	var newTweets []string
+	done := readFileToList("done.txt")
 
 	service, wd := randomLogin()
 	defer service.Stop()
 	defer wd.Close()
 
 	for _, account := range accounts {
+		if contains(account, done) {
+			continue
+		}
 		startingPointURL := fmt.Sprintf("https://twitter.com/%s", account)
 		fmt.Printf("Checking %s\n", startingPointURL)
 		openURL(startingPointURL, &wd)
@@ -82,6 +86,7 @@ func getAllStartingPoints(lst []string, accounts []string) []string {
 		for true {
 			for i := 0; i < 10; i++ {
 				wd.ExecuteScript("window.scrollTo(0, document.body.scrollHeight)", nil)
+				time.Sleep(500 * time.Millisecond)
 			}
 			tweets = findElementsByCSS("div.tweet", &wd)
 			n := len(tweets)
@@ -100,6 +105,7 @@ func getAllStartingPoints(lst []string, accounts []string) []string {
 				}
 			}
 		}
+		appendToFile("done.txt", account)
 	}
 
 	err := wd.Quit()

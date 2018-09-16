@@ -8,13 +8,13 @@ cmumocap/.DS_Store
 .DS_Store
 *.avi
 *.csv
-*.txt
 *.mpg
 *.mov
 *.mp4
 *.c3d
 *.sh
 cmumocap/cmumocap
+cmumocap/*/*.txt
 rbo/loop/loop
 sfi/selenium-server-standalone-3.8.1.jar
 sfi/geckodriver

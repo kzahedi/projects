@@ -26,3 +26,5 @@ sfi/data/*.json
 sfi/data/*.pdf
 *.pyc
 *.pdf
+data
+data_cpy

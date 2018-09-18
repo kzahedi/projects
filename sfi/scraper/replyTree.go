@@ -188,7 +188,7 @@ func collectReplyTree(urls []string) []string {
 	defer wd.Close()
 
 	for _, url := range urls {
-		// fmt.Printf("Working on %s\n", url)
+		fmt.Printf("Working on %s\n", url)
 		parts := strings.Split(url, "/")
 		idStr := parts[len(parts)-1]
 		filename := fmt.Sprintf("data/%s.json", idStr)

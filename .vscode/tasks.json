@@ -30,7 +30,29 @@
             "type": "shell",
             "command": "env GOOS=linux GOARCH=amd64 go build",
             "options": {
-                "cwd": "${workspaceFolder}/sf"
+                "cwd": "${workspaceFolder}/sfi"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "analyse by account type",
+            "type": "shell",
+            "command": "go run *.go -d ../data -h twitterhandles.csv",
+            "options": {
+                "cwd": "${workspaceFolder}/sfi/analysis"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        },
+        {
+            "label": "convert account ids",
+            "type": "shell",
+            "command": "go run *.go -i hateaccounts.csv -o twitterhandles.csv",
+            "options": {
+                "cwd": "${workspaceFolder}/sfi/convert"
             },
             "problemMatcher": [
                 "$go"

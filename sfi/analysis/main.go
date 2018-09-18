@@ -3,78 +3,73 @@ package main
 import (
 	"flag"
 	"fmt"
-	"strings"
+	"sort"
 
-	"github.com/kzahedi/projects/sfi/tweet"
+	"github.com/kzahedi/projects/sfi/twitter"
+	"github.com/kzahedi/projects/sfi/util"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
-
-func checkForHateAccounts(tweet *tweet.Tweet, hate string) bool {
-	if tweet.TwitterHandle == hate {
-		// fmt.Printf("Found Hate %s \"%s\"\n", tweet.TwitterHandle, tweet.Name)
-		tweet.HateAccount = true
-		return true
-	}
-
-	if strings.Contains(tweet.Name, "❌") == true {
-		// fmt.Printf("Found Hate %s \"%s\"\n", tweet.TwitterHandle, tweet.Name)
-		tweet.HateAccount = true
-		return true
-	}
-
-	if strings.Contains(tweet.Name, "QFD") == true {
-		// fmt.Printf("Found Hate %s \"%s\"\n", tweet.TwitterHandle, tweet.Name)
-		tweet.HateAccount = true
-		return true
-	}
-
-	if strings.Contains(tweet.Name, "⭕️") == true {
-		// fmt.Printf("Found Counter %s \"%s\"\n", tweet.TwitterHandle, tweet.Name)
-		tweet.HateAccount = true
-		return true
-	}
-
-	if strings.Contains(tweet.Name, "2MInt") == true {
-		// fmt.Printf("Found Counter %s \"%s\"\n", tweet.TwitterHandle, tweet.Name)
-		tweet.HateAccount = true
-		return true
-	}
-
-	if strings.Contains(tweet.Name, "#FBPE") == true {
-		// fmt.Printf("Found Counter %s \"%s\"\n", tweet.TwitterHandle, tweet.Name)
-		tweet.HateAccount = true
-		return true
-	}
-
-	found := false
-	for _, t := range (*tweet).Children {
-		f := checkForHateAccounts(&t, hate)
-		found = found || f
-	}
-	return found
-}
 
 func main() {
 	dir := flag.String("d", "", "Input dir")
 	hate := flag.String("h", "", "hate accounts")
+	min := flag.Int("min", 10, "Minimum number of interactions")
 	flag.Parse()
 
 	files := readDirContent(fmt.Sprintf("%s/*.json", *dir))
+
 	hateAccounts := readFileToList(*hate)
 
+	fmt.Println("Marking Hate and Counter Accounts")
 	bar := pb.StartNew(len(files))
-
 	for _, f := range files {
-		tweet := tweet.ReadTweetJSON(f)
-		found := false
-		for _, h := range hateAccounts {
-			h := strings.Replace(h, "@", "", 1)
-			found = checkForHateAccounts(&tweet, h)
-		}
+		// fmt.Println(f)
+		tweet := twitter.ReadTweetJSON(f)
+		checkTweet(&tweet, &hateAccounts)
+		tweet.ExportJSON(f)
 		bar.Increment()
-		if found == true {
-			tweet.ExportJSON(f)
-		}
 	}
 	bar.Finish()
+
+	fmt.Println("Twitter handle histogram")
+	bar = pb.StartNew(len(files))
+	counts := make(map[string]int)
+	for _, f := range files {
+		// fmt.Println(f)
+		tweet := twitter.ReadTweetJSON(f)
+		r := countHandles(tweet)
+		for k, v := range r {
+			counts[k] = counts[k] + v
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+
+	type kv struct {
+		Key   string
+		Value int
+	}
+
+	var ss []kv
+	for k, v := range counts {
+		ss = append(ss, kv{k, v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].Value > ss[j].Value
+	})
+
+	watchedAccounts := util.ReadFileToList("../watch/accounts.txt")
+	hateAccounts := util.ReadFileToList("../watch/hateaccounts.txt")
+
+	var list []string
+
+	for _, kv := range ss {
+		if kv.Value >= *min &&
+			util.ListContains(&watchedAccounts, kv.Key) == false &&
+			util.ListContains(&hateAccounts, kv.Key) == false {
+			list = append(list, fmt.Sprintf("%s,%d", kv.Key, kv.Value))
+		}
+	}
+	util.WriteListToFile("../watch/account_counts.csv", &list)
 }

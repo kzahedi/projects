@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kzahedi/projects/sfi/io"
+	"github.com/kzahedi/projects/sfi/twitter"
 	"github.com/tebeka/selenium"
 )
 
@@ -58,8 +60,8 @@ func openMoreReplies(wd *selenium.WebDriver) {
 	}
 }
 
-func getThreadEntry(we selenium.WebElement, rootNode bool) (Tweet, bool) {
-	tweet := makeTweet()
+func getThreadEntry(we selenium.WebElement, rootNode bool) (twitter.Tweet, bool) {
+	tweet := twitter.MakeTweet()
 	element := findChildElementByCSS("div.tweet", we)
 	class, _ := element.GetAttribute("class")
 	if strings.Contains(class, "withheld-tweet") {
@@ -123,8 +125,8 @@ func getThreadEntry(we selenium.WebElement, rootNode bool) (Tweet, bool) {
 	return tweet, true
 }
 
-func getChildren(root Tweet, wd *selenium.WebDriver) []Tweet {
-	var tweets []Tweet
+func getChildren(root twitter.Tweet, wd *selenium.WebDriver) []twitter.Tweet {
+	var tweets []twitter.Tweet
 	scrollAllTheWay(wd)
 
 	li := findElementsByCSS("li", wd)
@@ -145,8 +147,8 @@ func getChildren(root Tweet, wd *selenium.WebDriver) []Tweet {
 	return tweets
 }
 
-func parseTree(node Tweet, wd *selenium.WebDriver) Tweet {
-	var kids []Tweet
+func parseTree(node twitter.Tweet, wd *selenium.WebDriver) twitter.Tweet {
+	var kids []twitter.Tweet
 	for _, child := range node.Children {
 		child.ParentID = node.ID
 		if child.Lone == false {
@@ -224,7 +226,7 @@ func collectReplyTree(urls []string) []string {
 
 		b, _ := json.Marshal(root)
 
-		writeBytesToFile(filename, b)
+		io.WriteBytesToFile(filename, b)
 		fmt.Printf("Wrote %s\n", filename)
 	}
 	err := wd.Quit()
@@ -235,8 +237,8 @@ func collectReplyTree(urls []string) []string {
 }
 
 func collectReplyTrees(cpus int) {
-	spFile := readFileToList("watch/starting_points.txt")
-	jsonFiles := readDirContent("data/*.json")
+	spFile := io.ReadFileToList("watch/starting_points.txt")
+	jsonFiles := io.ReadDirContent("data/*.json")
 
 	var startingPoints []string
 

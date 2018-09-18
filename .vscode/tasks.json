@@ -39,7 +39,7 @@
         {
             "label": "analyse by account type",
             "type": "shell",
-            "command": "go run *.go -d ../data -h twitterhandles.csv",
+            "command": "go run *.go -d ../data -h ../watch/twitterhandles.csv",
             "options": {
                 "cwd": "${workspaceFolder}/sfi/analysis"
             },

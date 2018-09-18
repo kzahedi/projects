@@ -93,7 +93,6 @@ func main() {
 			continue
 		}
 		if count%20 == 0 || count == 0 {
-			fmt.Println("hier 0")
 			wd.Get("https://tweeterid.com")
 			time.Sleep(1 * time.Second)
 			divOutput = findElementByCSS("div.rightColumn", &wd)

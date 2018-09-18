@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"github.com/kzahedi/projects/sfi/io"
+	"github.com/kzahedi/projects/sfi/twitter"
 )
 
 func cleanUp() {
 	var delete []string
 
-	files := readDirContent("data/*.json")
+	files := io.ReadDirContent("data/*.json")
 
 	for _, f := range files {
 		bytes, _ := ioutil.ReadFile(f)
-		tweet := makeTweet()
+		tweet := twitter.MakeTweet()
 		json.Unmarshal(bytes, &tweet)
 		if tweet.Valid() == false {
 			delete = append(delete, f)

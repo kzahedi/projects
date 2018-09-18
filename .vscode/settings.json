@@ -1,9 +1,13 @@
 {
 	"python.pythonPath": "/usr/local/bin/python3",
 	"cSpell.words": [
+		"FBPE",
+		"cheggaaa",
 		"dateutil",
 		"dismissible",
 		"dtype",
+		"favorite",
+		"fileio",
 		"functools",
 		"numpy",
 		"plotutil",

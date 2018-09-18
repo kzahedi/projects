@@ -7,10 +7,16 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/kzahedi/projects/sfi/io"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 	"github.com/tebeka/selenium/firefox"
 )
+
+func getLoginPassword(file string) (string, string) {
+	lines := io.ReadFileToList(file)
+	return lines[0], lines[1]
+}
 
 func openBrowser() (*selenium.Service, selenium.WebDriver) {
 	// Start a Selenium WebDriver server instance (if one is not already

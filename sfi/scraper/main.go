@@ -2,19 +2,28 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"math/rand"
 	"time"
 )
 
 func main() {
 	cpus := flag.Int("cpu", 2, "CPUS")
-	//all := flag.Bool("all", false, "Get all tweets")
-	// cleanUpStartingPoints()
+	cleanUp := flag.Bool("cu", false, "Clean up starting_points.txt")
+	getNew := flag.Bool("gn", false, "Get new tweets")
+	all := flag.Bool("all", false, "Get all tweets")
+	if *cleanUp == true {
+		fmt.Println("Cleaning up")
+		cleanUpStartingPoints()
+	}
 
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
 	for true {
-		//		collectNewStartingPoints(*cpus, *all)
+		if *getNew == true {
+			fmt.Println("Getting new Tweets")
+			collectNewStartingPoints(*cpus, *all)
+		}
 		collectReplyTrees(*cpus)
 		time.Sleep(10 * time.Hour)
 	}

@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/tebeka/selenium"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/kzahedi/projects/sfi/io"
+	"github.com/tebeka/selenium"
 )
 
 func getNewStartingPoints(lst []string, accounts []string) []string {
@@ -56,18 +58,9 @@ func getNewStartingPoints(lst []string, accounts []string) []string {
 	return newTweets
 }
 
-func contains(entry string, lst []string) bool {
-	for _, v := range lst {
-		if v == entry {
-			return true
-		}
-	}
-	return false
-}
-
 func getAllStartingPoints(lst []string, accounts []string) []string {
 	var newTweets []string
-	done := readFileToList("done.txt")
+	done := io.ReadFileToList("done.txt")
 
 	service, wd := randomLogin()
 	defer service.Stop()
@@ -105,7 +98,7 @@ func getAllStartingPoints(lst []string, accounts []string) []string {
 				}
 			}
 		}
-		appendToFile("done.txt", account)
+		io.AppendToFile("done.txt", account)
 	}
 
 	err := wd.Quit()
@@ -117,7 +110,7 @@ func getAllStartingPoints(lst []string, accounts []string) []string {
 }
 
 func cleanUpStartingPoints() {
-	startingPoints := readFileToList("watch/starting_points.txt")
+	startingPoints := io.ReadFileToList("watch/starting_points.txt")
 	var r []string
 	for _, s := range startingPoints {
 		if s == "https://twitter.com" {
@@ -127,13 +120,13 @@ func cleanUpStartingPoints() {
 			r = append(r, s)
 		}
 	}
-	writeListToFile(&r, "watch/starting_points.txt")
+	io.WriteListToFile(&r, "watch/starting_points.txt")
 }
 
 func collectNewStartingPoints(cpus int, all bool) {
 	cleanUpStartingPoints()
-	startingPoints := readFileToList("watch/starting_points.txt")
-	accounts := readFileToList("watch/accounts.txt")
+	startingPoints := io.ReadFileToList("watch/starting_points.txt")
+	accounts := io.ReadFileToList("watch/accounts.txt")
 
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(accounts), func(i, j int) { accounts[i], accounts[j] = accounts[j], accounts[i] })
@@ -177,7 +170,7 @@ func collectNewStartingPoints(cpus int, all bool) {
 		for _, v := range a {
 			fmt.Printf("Found new starting point %s\n", v)
 			newStartingPoints = append(newStartingPoints, v)
-			appendToFile("watch/starting_points.txt", v)
+			io.AppendToFile("watch/starting_points.txt", v)
 		}
 	}
 

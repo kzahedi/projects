@@ -28,3 +28,4 @@ sfi/data/*.pdf
 *.pdf
 data
 data_cpy
+sfi/keep

@@ -15,14 +15,23 @@ func checkForHateAccounts(tweet *twitter.Tweet, hateAccount string) bool {
 	return false
 }
 
-func checkTweet(tweet *twitter.Tweet, accounts *[]string) bool {
+func checkTweet(tweet *twitter.Tweet, hate *[]string, counter *[]string) bool {
 	found := false
 
-	// fmt.Println(tweet.Name)
+	for _, h := range *hate {
+		h = strings.Replace(h, "@", "", 1)
+		if tweet.TwitterHandle == h {
+			// fmt.Printf("Found Hate \"%s\" \"%s\"\n", tweet.TwitterHandle, h)
+			(*tweet).HateAccount = true
+			found = true
+		}
+	}
 
-	for _, h := range *accounts {
-		h := strings.Replace(h, "@", "", 1)
-		if checkForHateAccounts(tweet, h) == true {
+	for _, c := range *counter {
+		c = strings.Replace(c, "@", "", 1)
+		if (*tweet).TwitterHandle == c {
+			// fmt.Printf("Found Counter \"%s\" \"%s\"\n", tweet.TwitterHandle, c)
+			(*tweet).CounterAccount = true
 			found = true
 		}
 	}
@@ -65,7 +74,7 @@ func checkTweet(tweet *twitter.Tweet, accounts *[]string) bool {
 
 	var c []twitter.Tweet
 	for _, t := range (*tweet).Children {
-		if checkTweet(&t, accounts) == true {
+		if checkTweet(&t, hate, counter) == true {
 			found = true
 		}
 		c = append(c, t)

@@ -8,7 +8,7 @@
             "type": "shell",
             "command": "go run *.go",
             "options": {
-                "cwd": "${workspaceFolder}/sfi"
+                "cwd": "${workspaceFolder}/sfi/scraper"
             },
             "problemMatcher": [
                 "$go"
@@ -39,7 +39,7 @@
         {
             "label": "analyse by account type",
             "type": "shell",
-            "command": "go run *.go -d ../data -h ../watch/twitterhandles.csv",
+            "command": "go run *.go -d /Users/zahedi/projects/ReplyTree/graph/data -h ../scraper/watch/hateaccounts.csv -c ../scraper/watch/counteraccounts.csv",
             "options": {
                 "cwd": "${workspaceFolder}/sfi/analysis"
             },

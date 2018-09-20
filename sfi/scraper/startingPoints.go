@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kzahedi/projects/sfi/io"
+	"github.com/kzahedi/projects/sfi/util"
 	"github.com/tebeka/selenium"
 )
 
@@ -38,7 +38,7 @@ func getNewStartingPoints(lst []string, accounts []string) []string {
 
 			found := false
 			for _, newURL := range newlyCollected {
-				if contains(newURL, lst) == true {
+				if util.ListContains(&lst, newURL) == true {
 					found = true
 				} else {
 					newTweets = append(newTweets, newURL)
@@ -60,14 +60,14 @@ func getNewStartingPoints(lst []string, accounts []string) []string {
 
 func getAllStartingPoints(lst []string, accounts []string) []string {
 	var newTweets []string
-	done := io.ReadFileToList("done.txt")
+	done := util.ReadFileToList("done.txt")
 
 	service, wd := randomLogin()
 	defer service.Stop()
 	defer wd.Close()
 
 	for _, account := range accounts {
-		if contains(account, done) {
+		if util.ListContains(&done, account) {
 			continue
 		}
 		startingPointURL := fmt.Sprintf("https://twitter.com/%s", account)
@@ -93,12 +93,12 @@ func getAllStartingPoints(lst []string, accounts []string) []string {
 			s, _ := t.GetAttribute("data-permalink-path")
 			if len(s) > 1 {
 				s = fmt.Sprintf("https://twitter.com%s", s)
-				if contains(s, lst) == false {
+				if util.ListContains(&lst, s) == false {
 					newTweets = append(newTweets, s)
 				}
 			}
 		}
-		io.AppendToFile("done.txt", account)
+		util.AppendToFile("done.txt", account)
 	}
 
 	err := wd.Quit()
@@ -110,23 +110,23 @@ func getAllStartingPoints(lst []string, accounts []string) []string {
 }
 
 func cleanUpStartingPoints() {
-	startingPoints := io.ReadFileToList("watch/starting_points.txt")
+	startingPoints := util.ReadFileToList("watch/starting_points.txt")
 	var r []string
 	for _, s := range startingPoints {
 		if s == "https://twitter.com" {
 			continue
 		}
-		if contains(s, r) == false {
+		if util.ListContains(&r, s) == false {
 			r = append(r, s)
 		}
 	}
-	io.WriteListToFile(&r, "watch/starting_points.txt")
+	util.WriteListToFile("watch/starting_points.txt", &r)
 }
 
 func collectNewStartingPoints(cpus int, all bool) {
 	cleanUpStartingPoints()
-	startingPoints := io.ReadFileToList("watch/starting_points.txt")
-	accounts := io.ReadFileToList("watch/accounts.txt")
+	startingPoints := util.ReadFileToList("watch/starting_points.txt")
+	accounts := util.ReadFileToList("watch/accounts.txt")
 
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(accounts), func(i, j int) { accounts[i], accounts[j] = accounts[j], accounts[i] })
@@ -170,7 +170,7 @@ func collectNewStartingPoints(cpus int, all bool) {
 		for _, v := range a {
 			fmt.Printf("Found new starting point %s\n", v)
 			newStartingPoints = append(newStartingPoints, v)
-			io.AppendToFile("watch/starting_points.txt", v)
+			util.AppendToFile("watch/starting_points.txt", v)
 		}
 	}
 

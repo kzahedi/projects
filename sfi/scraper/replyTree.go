@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kzahedi/projects/sfi/io"
 	"github.com/kzahedi/projects/sfi/twitter"
+	"github.com/kzahedi/projects/sfi/util"
 	"github.com/tebeka/selenium"
 )
 
@@ -76,14 +76,8 @@ func getThreadEntry(we selenium.WebElement, rootNode bool) (twitter.Tweet, bool)
 	linkStr, _ := element.GetAttribute("data-permalink-path")
 	userID, _ := strconv.ParseInt(userIDStr, 10, 64)
 
-	var date string
-	if rootNode == true {
-		dateRoot := findChildElementByCSS("span.metadata", we)
-		date, _ = dateRoot.Text()
-	} else {
-		dateRoot := findChildElementByCSS("a.tweet-timestamp", element)
-		date, _ = dateRoot.GetAttribute("data-original-title")
-	}
+	dateRoot := findChildElementByCSS("span._timestamp", element)
+	date, _ := dateRoot.GetAttribute("data-time")
 
 	var text string
 	textNode := findChildElementByCSS("p.TweetTextSize", we)
@@ -115,7 +109,7 @@ func getThreadEntry(we selenium.WebElement, rootNode bool) (twitter.Tweet, bool)
 	tweet.Text = text
 	tweet.TwitterID = int(userID)
 	tweet.Link = fmt.Sprintf("https://twitter.com%s", linkStr)
-	tweet.Date = date
+	tweet.Date, _ = strconv.ParseInt(date, 10, 64)
 	tweet.Likes = int(nLikes)
 	tweet.Retweets = int(nRetweets)
 	tweet.Replies = int(nReplies)
@@ -162,20 +156,11 @@ func parseTree(node twitter.Tweet, wd *selenium.WebDriver) twitter.Tweet {
 	return node
 }
 
-func checkTime(date string) bool {
-	splits := strings.Split(date, " ")
-	if len(splits) < 6 {
-		return false
-	}
-	dateStr := fmt.Sprintf("%s %s, %s at %s%s", splits[4], splits[3], splits[5], splits[0], strings.ToLower(splits[1]))
-
-	const longForm = "Jan 2, 2006 at 3:04pm"
-	d, err := time.Parse(longForm, dateStr)
-	if err != nil {
-		panic(err)
-	}
-
+func checkTime(date int64) bool {
+	d := time.Unix(date, 0)
+	// fmt.Println(d)
 	duration := time.Since(d)
+	// fmt.Println(duration)
 	if duration.Hours() > 48 {
 		return true
 	}
@@ -226,7 +211,7 @@ func collectReplyTree(urls []string) []string {
 
 		b, _ := json.Marshal(root)
 
-		io.WriteBytesToFile(filename, b)
+		util.WriteBytesToFile(filename, b)
 		fmt.Printf("Wrote %s\n", filename)
 	}
 	err := wd.Quit()
@@ -237,8 +222,8 @@ func collectReplyTree(urls []string) []string {
 }
 
 func collectReplyTrees(cpus int) {
-	spFile := io.ReadFileToList("watch/starting_points.txt")
-	jsonFiles := io.ReadDirContent("data/*.json")
+	spFile := util.ReadFileToList("watch/starting_points.txt")
+	jsonFiles := util.ReadDirContent("data/*.json")
 
 	var startingPoints []string
 

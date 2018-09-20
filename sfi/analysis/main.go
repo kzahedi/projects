@@ -13,19 +13,21 @@ import (
 func main() {
 	dir := flag.String("d", "", "Input dir")
 	hate := flag.String("h", "", "hate accounts")
+	counter := flag.String("c", "", "counter accounts")
 	min := flag.Int("min", 10, "Minimum number of interactions")
 	flag.Parse()
 
 	files := readDirContent(fmt.Sprintf("%s/*.json", *dir))
 
-	hateAccounts := readFileToList(*hate)
+	hateAccounts := util.ReadFileToList(*hate)
+	counterAccounts := util.ReadFileToList(*counter)
 
 	fmt.Println("Marking Hate and Counter Accounts")
 	bar := pb.StartNew(len(files))
 	for _, f := range files {
 		// fmt.Println(f)
 		tweet := twitter.ReadTweetJSON(f)
-		checkTweet(&tweet, &hateAccounts)
+		checkTweet(&tweet, &hateAccounts, &counterAccounts)
 		tweet.ExportJSON(f)
 		bar.Increment()
 	}
@@ -59,8 +61,7 @@ func main() {
 		return ss[i].Value > ss[j].Value
 	})
 
-	watchedAccounts := util.ReadFileToList("../watch/accounts.txt")
-	hateAccounts := util.ReadFileToList("../watch/hateaccounts.txt")
+	watchedAccounts := util.ReadFileToList("../scraper/watch/accounts.txt")
 
 	var list []string
 
@@ -71,5 +72,5 @@ func main() {
 			list = append(list, fmt.Sprintf("%s,%d", kv.Key, kv.Value))
 		}
 	}
-	util.WriteListToFile("../watch/account_counts.csv", &list)
+	util.WriteListToFile("../scraper/watch/account_counts.csv", &list)
 }

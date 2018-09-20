@@ -14,7 +14,7 @@ type Tweet struct {
 	Name           string
 	TwitterHandle  string
 	Text           string
-	Date           string
+	Date           int64
 	Replies        int
 	Retweets       int
 	Likes          int
@@ -35,7 +35,7 @@ func MakeTweet() Tweet {
 		TwitterHandle:  "",
 		Type:           "",
 		Text:           "",
-		Date:           "",
+		Date:           0,
 		Link:           "",
 		Replies:        0,
 		Retweets:       0,

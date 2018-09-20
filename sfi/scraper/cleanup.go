@@ -6,14 +6,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/kzahedi/projects/sfi/io"
 	"github.com/kzahedi/projects/sfi/twitter"
+	"github.com/kzahedi/projects/sfi/util"
 )
 
 func cleanUp() {
 	var delete []string
 
-	files := io.ReadDirContent("data/*.json")
+	files := util.ReadDirContent("data/*.json")
 
 	for _, f := range files {
 		bytes, _ := ioutil.ReadFile(f)

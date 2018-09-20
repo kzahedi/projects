@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/kzahedi/projects/sfi/io"
+	"github.com/kzahedi/projects/sfi/util"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 	"github.com/tebeka/selenium/firefox"
 )
 
 func getLoginPassword(file string) (string, string) {
-	lines := io.ReadFileToList(file)
+	lines := util.ReadFileToList(file)
 	return lines[0], lines[1]
 }
 
@@ -45,7 +45,7 @@ func openBrowser() (*selenium.Service, selenium.WebDriver) {
 
 	if runtime.GOOS == "darwin" {
 		c := chrome.Capabilities{}
-		// c.Args = []string{"--headless"}
+		c.Args = []string{"--headless"}
 		caps := selenium.Capabilities{"browserName": "chrome"}
 		caps.AddChrome(c)
 

@@ -21,7 +21,6 @@ func main() {
 	rand.Seed(time.Now().Unix())
 	for true {
 		if *getNew == true {
-			fmt.Println("Getting new Tweets")
 			collectNewStartingPoints(*cpus, *all)
 		}
 		collectReplyTrees(*cpus)

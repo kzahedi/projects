@@ -58,5 +58,14 @@
                 "$go"
             ]
         },
+        {
+            "label": "move scraper to server",
+            "type": "shell",
+            "command": "sh move.sh",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        }
     ]
 }

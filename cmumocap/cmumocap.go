@@ -12,8 +12,8 @@ import (
 	"github.com/kniren/gota/dataframe"
 	"github.com/kniren/gota/series"
 	"github.com/kzahedi/goc3d"
-	"github.com/kzahedi/goent/continuous"
-	"github.com/kzahedi/goent/continuous/state"
+	"github.com/kzahedi/gomi/continuous"
+	"github.com/kzahedi/gomi/continuous/state"
 	"github.com/kzahedi/utils"
 
 	"gonum.org/v1/plot/plotter"
@@ -54,13 +54,13 @@ func main() {
 	directory := fmt.Sprintf("%s_%s_%s", sStr, tStr, labelSetLabel)
 	id := fmt.Sprintf("%s_%s", sStr, tStr)
 	c3dFile := fmt.Sprintf("%s/%s.c3d", directory, id)
-	c3dUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.c3d", sStr, id)
+	c3dURL := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.c3d", sStr, id)
 
 	mpgFile := fmt.Sprintf("%s/%s.mpg", directory, id)
-	mpgUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.mpg", sStr, id)
+	mpgURL := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.mpg", sStr, id)
 
 	aviFile := fmt.Sprintf("%s/%s.avi", directory, id)
-	aviUrl := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.avi", sStr, id)
+	aviURL := fmt.Sprintf("http://mocap.cs.cmu.edu/subjects/%s/%s.avi", sStr, id)
 
 	headerFile := fmt.Sprintf("%s/%s_meta.c3d", directory, id)
 	resultFile := fmt.Sprintf("%s/%s_results.txt", directory, id)
@@ -70,9 +70,9 @@ func main() {
 
 	utils.CreateDirectory(directory, false)
 
-	downloadFile(c3dFile, c3dUrl)
-	downloadFile(mpgFile, mpgUrl)
-	downloadFile(aviFile, aviUrl)
+	downloadFile(c3dFile, c3dURL)
+	downloadFile(mpgFile, mpgURL)
+	downloadFile(aviFile, aviURL)
 
 	////////////////////////////////////////////////////////////
 	// Read C3D File
@@ -318,10 +318,10 @@ func getData(index int, label string, data goc3d.C3DData, useJerk bool) ([]strin
 
 	// velocity
 	for i := 1; i < len(points); i++ {
-		xdist := (rdata[0][i] - rdata[0][i-1])
-		ydist := (rdata[1][i] - rdata[1][i-1])
-		zdist := (rdata[2][i] - rdata[2][i-1])
-		dist := math.Sqrt(xdist*xdist + ydist*ydist + zdist*zdist)
+		xDist := (rdata[0][i] - rdata[0][i-1])
+		yDist := (rdata[1][i] - rdata[1][i-1])
+		zDist := (rdata[2][i] - rdata[2][i-1])
+		dist := math.Sqrt(xDist*xDist + yDist*yDist + zDist*zDist)
 
 		rdata[3][i] = dist
 	}
@@ -346,7 +346,7 @@ func getData(index int, label string, data goc3d.C3DData, useJerk bool) ([]strin
 	return labels, rdata
 }
 
-func MinMax(data []float64) (float64, float64) {
+func minMax(data []float64) (float64, float64) {
 	min := data[0]
 	max := data[0]
 
@@ -393,7 +393,7 @@ func coordinateTransformation(df dataframe.DataFrame, centre string) dataframe.D
 		}
 		var d dataframe.DataFrame
 		if len(cmp) > 0 {
-			for i, _ := range f {
+			for i := range f {
 				f[i] = f[i] - cmp[i]
 			}
 			d = dataframe.New(series.New(f, series.Float, name))
@@ -421,7 +421,7 @@ func normaliseDataFrame(df dataframe.DataFrame) dataframe.DataFrame {
 	for i, name := range names {
 		s := df.Col(name)
 		f := s.Float()
-		min, max := MinMax(f)
+		min, max := minMax(f)
 		if math.Abs(max-min) > 0.0001 {
 			for i := range f {
 				f[i] = (f[i] - min) / (max - min)
@@ -458,10 +458,10 @@ func downloadFile(filename, url string) (err error) {
 
 	// Get the data
 	resp, err := http.Get(url)
-	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)

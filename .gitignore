@@ -29,3 +29,7 @@ sfi/data/*.pdf
 data
 data_cpy
 sfi/keep
+scraper/*.json
+scraper/*.zip
+scraper/*.yaml
+.history
